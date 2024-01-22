@@ -3,11 +3,12 @@ import bilby
 from gwpy.timeseries import TimeSeries
 
 logger = bilby.core.utils.logger
-label = 'GW150914'
+label = 'GW150914_only4'
 outdir = f'/home/useradd/projects/bilby/MyStuff/my_outdir/{label}'
 
 # Data set up
 trigger_time = 1126259462
+priors = bilby.gw.prior.BBHPriorDict(filename='/home/useradd/projects/bilby/MyStuff/prior_files/GW150914.prior')
 
 roll_off = 0.4  # Roll off duration of tukey window in seconds, default is 0.4s
 duration = 4  # Analysis segment duration
@@ -50,7 +51,6 @@ ifo_list.plot_data(outdir=outdir, label=label)
 # You can overwrite this using the syntax below in the file,
 # or choose a fixed value by just providing a float value as the prior.
 #priors = bilby.gw.prior.BBHPriorDict(filename='GW150914.prior')
-priors = bilby.gw.prior.BBHPriorDict(filename='/home/useradd/projects/bilby/MyStuff/prior_files/GW150914.prior')
 
 # In this step we define a `waveform_generator`. This is the object which
 # creates the frequency-domain strain. In this instance, we are using the
@@ -76,3 +76,4 @@ result = bilby.run_sampler(
     nlive=500, walks=50, n_check_point=5000, check_point_plot=True,
     conversion_function=bilby.gw.conversion.generate_all_bbh_parameters)
 result.plot_corner()
+result.plot_corner(parameters=['mass_ratio', 'chirp_mass', 'a_1', 'a_2'])

@@ -261,8 +261,8 @@ class Sampler(object):
             Likelihood can't be evaluated.
 
         """
-
         if self.priors.test_has_redundant_keys():
+            
             raise IllegalSamplingSetError(
                 "Your sampling set contains redundant parameters.")
 

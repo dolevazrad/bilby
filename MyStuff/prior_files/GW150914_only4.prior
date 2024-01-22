@@ -1,4 +1,3 @@
-
 # Priors for GW150914, estimating only masses and spins
 
 mass_ratio = Uniform(name='mass_ratio', minimum=0.125, maximum=1, boundary='reflective')
@@ -8,15 +7,15 @@ mass_2 = Constraint(name='mass_2', minimum=10, maximum=80)
 a_1 = Uniform(name='a_1', minimum=0, maximum=0.99, boundary='reflective')
 a_2 = Uniform(name='a_2', minimum=0, maximum=0.99, boundary='reflective')
 
-# Fixing other parameters
-tilt_1 = 0.0  # Fixed value
-tilt_2 = 0.0  # Fixed value
-phi_12 = 0.0  # Fixed value
-phi_jl = 0.0  # Fixed value
-luminosity_distance = 1000  # Fixed value in Mpc
-dec = 0.0  # Fixed value
-ra = 0.0  # Fixed value
-theta_jn = 0.0  # Fixed value
-psi = 0.0  # Fixed value
-phase = 0.0  # Fixed value
-geocent_time = 1126259462.4  # Fixed value
+# Fixing other parameters to median values
+tilt_1 = 1.6868543238866573  # Fixed value from median
+tilt_2 = 1.6909055689248322  # Fixed value from median
+phi_12 = 3.2522188348327465  # Fixed value from median
+phi_jl = 3.2141183403292963  # Fixed value from median
+luminosity_distance = 431.32687472236137  # Fixed value from median in Mpc
+dec = -1.2024797537167138  # Fixed value from median
+ra = 1.6925116347397302  # Fixed value from median
+theta_jn = 2.7155410479224678  # Fixed value from median
+psi = 1.6344751055693374  # Fixed value from median
+phase = 3.140505801388021  # Fixed value from median
+geocent_time = 1126259462.4166608  # Fixed value from median
