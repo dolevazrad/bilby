@@ -1,70 +1,132 @@
+#!/usr/bin/env python
+"""
+Tutorial to demonstrate running parameter estimation on a reduced parameter
+space for an injected signal.
+
+This example estimates the masses using a uniform prior in both component masses
+and distance using a uniform in comoving volume prior on luminosity distance
+between luminosity distances of 100Mpc and 5Gpc, the cosmology is Planck15.
+"""
+
 import bilby
-import matplotlib.pyplot as plt
+import numpy as np
+# Set the duration and sampling frequency of the data segment that we're
+# going to inject the signal into
+duration = 4.0
+sampling_frequency = 2048.0
+minimum_frequency = 20
 
-
-
-time_duration = 4.                     # time duration (seconds)
-sampling_frequency = 2048.             # sampling frequency (Hz)
-label = 'visualising_the_ results_with_spin'      # identifier to apply to output files
+# Specify the output directory and the name of the simulation.
+label = "fast_4_cbc"
 outdir = f'/home/useradd/projects/bilby/MyStuff/my_outdir/{label}'
+bilby.core.utils.setup_logger(outdir=outdir, label=label)
 
-# specify injection parameters
+# Set up a random seed for result reproducibility.  This is optional!
+np.random.seed(88170235)
+
+# We are going to inject a binary black hole waveform.  We first establish a
+# dictionary of parameters that includes all of the different waveform
+# parameters, including masses of the two black holes (mass_1, mass_2),
+# spins of both black holes (a, tilt, phi), etc.
 injection_parameters = dict(
-mass_1=36.,                          # detector frame (redshifted) primary mass (solar masses)
-mass_2=29.,                          # detector frame (redshifted) secondary mass (solar masses)
-a_1=0.4,                             # primary dimensionless spin magnitude
-a_2=0.3,                             # secondary dimensionless spin magnitude
-tilt_1=0.5,                          # polar angle between primary spin and the orbital angular momentum (radians)
-tilt_2=1.0,                          # polar angle between secondary spin and the orbital angular momentum 
-phi_12=1.7,                          # azimuthal angle between primary and secondary spin (radians)
-phi_jl=0.3,                          # azimuthal angle between total angular momentum and orbital angular momentum (radians)
-luminosity_distance=200.,            # luminosity distance to source (Mpc)
-theta_jn=0.4,                        # inclination angle between line of sight and orbital angular momentum (radians)
-phase=1.3,                           # phase (radians)
-ra=1.375,                            # source right ascension (radians)
-dec=-1.2108,                         # source declination (radians)
-geocent_time=1126259642.413,         # reference time at geocentre (time of coalescence or peak amplitude) (GPS seconds)
-psi=2.659                            # gravitational wave polarisation angle
+    mass_1=36.0,
+    mass_2=29.0,
+    a_1=0.4,
+    a_2=0.3,
+    tilt_1=0.5,
+    tilt_2=1.0,
+    phi_12=1.7,
+    phi_jl=0.3,
+    luminosity_distance=2000.0,
+    theta_jn=0.4,
+    psi=2.659,
+    phase=1.3,
+    geocent_time=1126259642.413,
+    ra=1.375,
+    dec=-1.2108,
 )
 
-# specify waveform arguments
+# Fixed arguments passed into the source model
 waveform_arguments = dict(
-waveform_approximant='IMRPhenomPv2', # waveform approximant name
-reference_frequency=50.,             # gravitational waveform reference frequency (Hz)
+    waveform_approximant="IMRPhenomPv2",
+    reference_frequency=50.0,
+    minimum_frequency=minimum_frequency,
 )
 
-# set up the waveform generator
-waveform_generator = bilby.gw.waveform_generator.WaveformGenerator(
-    sampling_frequency=sampling_frequency, duration=time_duration,
+# Create the waveform_generator using a LAL BinaryBlackHole source function
+waveform_generator = bilby.gw.WaveformGenerator(
+    duration=duration,
+    sampling_frequency=sampling_frequency,
     frequency_domain_source_model=bilby.gw.source.lal_binary_black_hole,
-    parameters=injection_parameters, waveform_arguments=waveform_arguments)
-# create the frequency domain signal
-hf_signal = waveform_generator.frequency_domain_strain()
+    parameter_conversion=bilby.gw.conversion.convert_to_lal_binary_black_hole_parameters,
+    waveform_arguments=waveform_arguments,
+)
 
-# initialise an interferometer based on LIGO Hanford, complete with simulated noise and injected signal
-IFOs = [bilby.gw.detector.get_interferometer_with_fake_noise_and_injection(
-    'H1', injection_polarizations=hf_signal, injection_parameters=injection_parameters, duration=time_duration,
-    sampling_frequency=sampling_frequency, outdir=outdir)]
+# Set up interferometers.  In this case we'll use two interferometers
+# (LIGO-Hanford (H1), LIGO-Livingston (L1). These default to their design
+# sensitivity
+ifos = bilby.gw.detector.InterferometerList(["H1", "L1"])
+ifos.set_strain_data_from_power_spectral_densities(
+    sampling_frequency=sampling_frequency,
+    duration=duration,
+    start_time=injection_parameters["geocent_time"] - 2,
+)
+ifos.inject_signal(
+    waveform_generator=waveform_generator, parameters=injection_parameters
+)
 
-# first, set up all priors to be equal to a delta function at their designated value
-priors = bilby.gw.prior.BBHPriorDict(injection_parameters.copy())
-# then, reset the priors on the masses and luminosity distance to conduct a search over these parameters
-priors['mass_1'] = bilby.core.prior.Uniform(20, 50, 'mass_1')
-priors['mass_2'] = bilby.core.prior.Uniform(20, 50, 'mass_2')
-priors['luminosity_distance'] = bilby.core.prior.Uniform(100, 500, 'luminosity_distance')
-priors['a_1'] = bilby.core.prior.Uniform(0, 0.99, 'a_1')
-priors['a_2'] = bilby.core.prior.Uniform(0, 0.99, 'a_2')
+# Set up a PriorDict, which inherits from dict.
+# By default we will sample all terms in the signal models.  However, this will
+# take a long time for the calculation, so for this example we will set almost
+# all of the priors to be equall to their injected values.  This implies the
+# prior is a delta function at the true, injected value.  In reality, the
+# sampler implementation is smart enough to not sample any parameter that has
+# a delta-function prior.
+# The above list does *not* include mass_1, mass_2, theta_jn and luminosity
+# distance, which means those are the parameters that will be included in the
+# sampler.  If we do nothing, then the default priors get used.
+priors = bilby.gw.prior.BBHPriorDict()
+for key in [
+    "a_1",
+    "a_2",
+    "tilt_1",
+    "tilt_2",
+    "phi_12",
+    "phi_jl",
+    "psi",
+    "ra",
+    "dec",
+    "geocent_time",
+    "phase",
+]:
+    priors[key] = injection_parameters[key]
 
+# Perform a check that the prior does not extend to a parameter space longer than the data
+priors.validate_prior(duration, minimum_frequency)
 
+# Initialise the likelihood by passing in the interferometer data (ifos) and
+# the waveform generator
+likelihood = bilby.gw.GravitationalWaveTransient(
+    interferometers=ifos, waveform_generator=waveform_generator
+)
 
-# compute the likelihoods
-likelihood = bilby.gw.likelihood.GravitationalWaveTransient(interferometers=IFOs, waveform_generator=waveform_generator)
+# Run sampler.  In this case we're going to use the `dynesty` sampler
+result = bilby.run_sampler(
+    likelihood=likelihood,
+    priors=priors,
+    sampler="dynesty",
+    npoints=1000,
+    injection_parameters=injection_parameters,
+    outdir=outdir,
+    label=label,
+)
 
-result = bilby.core.sampler.run_sampler(likelihood=likelihood, priors=priors, sampler='dynesty', npoints=500,
-                                   injection_parameters=injection_parameters, outdir=outdir, label=label,
-                                   walks=10)
+# Make a corner plot.
 result.plot_corner()
+parameter_order = [
+    'psi', 'a_2', 'a_1', 'tilt_2', 'tilt_1', 'phi_12', 'phi_jl', 'luminosity_distance', 'theta_jn',
+    'phase', 'ra', 'mass_2', 'mass_1', 'dec'
+]
+parameter_order = ['chirp_mass', 'mass_ratio', 'a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'theta_jn', 'psi', 'phase', 'ra', 'dec', 'luminosity_distance']
 
-# display the corner plot
-
-result.plot_corner(parameters=['mass_1', 'mass_2', 'luminosity_distance'], filename='{}/subset.png'.format(outdir))
+result.plot_corner(parameters=parameter_order, truths=injection_parameters, filename='{}/correct_order_corner_plot_with_truths.png'.format(outdir))
