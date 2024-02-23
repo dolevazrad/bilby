@@ -1,16 +1,11 @@
-import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib.patches import FancyArrowPatch, Circle, Arc, Patch, Arrow
-from matplotlib.lines import Line2D 
 import numpy as np
-from matplotlib.patches import FancyArrowPatch
-from mpl_toolkits.mplot3d import proj3d
-from mpl_toolkits.mplot3d.art3d import Line3DCollection
-from mpl_toolkits.mplot3d.art3d import Line3D
-
-outdir = f'/home/useradd/projects/bilby/MyStuff/images/'
-
+import bilby
+from generate_noise_from_power_spectral_density import generate_noise_from_power_spectral_density
+from bilby.gw.detector import PowerSpectralDensity
+from scipy.signal import convolve
+from scipy.interpolate import interp1d
+from scipy.signal import fftconvolve
+import matplotlib.pyplot as plt
 
 def calculate_chirp_mass_and_ratio(m1, m2):
     chirp_mass = (m1 * m2) ** (3./5.) / (m1 + m2) ** (1./5.)
@@ -26,101 +21,175 @@ def calculate_m1_m2_from_chirp_mass_and_ratio(chirp_mass, mass_ratio):
     m1 = (-B + (B**2 - 4 * A * C)**0.5) / (2 * A)
     m2 = mass_ratio * m1
     return m1, m2
+def generate_noise_curve(ifo, duration, sampling_frequency, noise_time):
+    """
+    Generate a noise curve for an interferometer, scaled by an effective noise_time factor.
+    
+    Parameters:
+    ifo -- bilby.gw.detector.Interferometer object
+    duration -- Duration of the data (in seconds)
+    sampling_frequency -- Sampling frequency (in Hz)
+    noise_time -- The time factor to scale the noise
+    """
+    
+    # Generate the noise timeseries for the interferometer
+    noise_data = ifo.get_detector_noise(duration=duration, sampling_frequency=sampling_frequency)
 
+    # For simulating a more accurate noise curve, we can generate more noise and then take a mean
+    # Essentially simulating longer observation time
+    noise_data_long = np.tile(noise_data, int(noise_time))
+    noise_psd_long = np.abs(np.fft.rfft(noise_data_long))**2
+    noise_psd_long /= noise_time  # Scaling by the noise_time to normalize
+    
+    # The new PSD will be the averaged one
+    new_psd = bilby.gw.detector.PowerSpectralDensity(frequency_array=ifo.power_spectral_density.frequency_array,
+                                                     psd_array=noise_psd_long[:len(ifo.power_spectral_density.frequency_array)])
+    
+    # Set the new PSD to the interferometer
+    ifo.power_spectral_density = new_psd
 
+    return ifo
+def scale_psd(ifo, scale_factor):
+    """
+    Scales the PSD of an interferometer to simulate different noise levels.
+    
+    Parameters:
+    ifo -- bilby.gw.detector.Interferometer object
+    scale_factor -- Factor by which to scale the PSD values.
+    """
+    # Access the existing PSD of the interferometer
+    existing_psd = ifo.power_spectral_density.psd_array
+    
+    # Scale the PSD by the given factor
+    new_psd_array = existing_psd * scale_factor
+    
+    # Update the interferometer's PSD
+    ifo.power_spectral_density.psd_array = new_psd_array
+def apply_moving_average(data, window_size):
+    """
+    Apply a moving average to a data series.
 
+    Parameters
+    ----------
+    data : array_like
+        Input data series.
+    window_size : int
+        The size of the moving average window.
 
+    Returns
+    -------
+    array_like
+        The smoothed data series.
+    """
+    return np.convolve(data, np.ones(window_size)/window_size, mode='same')
+def refine_and_set_noise(ifos, duration, sampling_frequency, noise_refinement_factor, window_size_factor):
+    """
+    Generate, refine, and set noise for a list of interferometers based on a given PSD and noise refinement factor.
 
+    Parameters
+    ----------
+    ifos : list of bilby.gw.detector.Interferometer objects
+        The list of interferometer objects for which to generate and set noise.
+    duration : float
+        Duration of the noise realization (in seconds).
+    sampling_frequency : float
+        Sampling frequency of the noise realization (in Hz).
+    noise_refinement_factor : float
+        Factor by which to extend the duration for noise generation to refine the noise estimate.
+    window_size_factor : float
+        Factor to determine the window size of the moving average based on the sampling frequency.
+    """
+    extended_duration = duration * noise_refinement_factor
+    window_size = int(sampling_frequency / window_size_factor)
 
-    def draw_orbit(self, center_of_mass, radius):
-        p = np.linspace(0, 2 * np.pi, 100)
-        x = center_of_mass[0] + radius * np.cos(p)
-        y = center_of_mass[1] + radius * np.sin(p)
-        z = center_of_mass[2] + radius * np.sin(p) * 0.1  # Small z variation for 3D effect
-        self.ax.plot(x, y, z, color='black', linestyle='dashed')
-
-    def draw_luminosity_distance(self, center_of_mass, distance_vector):
-        # Update to add label for luminosity distance
-        end_point = center_of_mass + distance_vector
-        self.ax.plot([center_of_mass[0], end_point[0]],
-                     [center_of_mass[1], end_point[1]],
-                     [center_of_mass[2], end_point[2]],
-                     color='purple', linestyle='-', linewidth=2, label='Luminosity Distance')
-        self.ax.text(end_point[0], end_point[1], end_point[2], '$d_L$', fontsize=12, color='purple')
-
-    def draw_black_holes(self, pos_bh1, pos_bh2, spin_bh1, spin_bh2,momentum_bh1, momentum_bh2, center_of_mass):
-        # Draw black holes
-        self.ax.scatter(*pos_bh1, color='blue', s=100, label='m1')
-        self.ax.scatter(*pos_bh2, color='red', s=200, label='m2')
-
-        # Draw spins as arrows
-        self.draw_vector(pos_bh1, pos_bh1 + spin_bh1, 'blue', '$\\vec{a}_1$')
-        self.draw_vector(pos_bh2, pos_bh2 + spin_bh2, 'red', '$\\vec{a}_2$')
+    for ifo in ifos:
+        # Generate extended duration noise from PSD
+        extended_noise = generate_noise_from_power_spectral_density(ifo.power_spectral_density, extended_duration, sampling_frequency)
         
-        # Draw momentum vectors as arrows
-        self.draw_vector(pos_bh1, pos_bh1 + momentum_bh1, 'blue', '$\\vec{p}_1$')
-        self.draw_vector(pos_bh2, pos_bh2 + momentum_bh2, 'red', '$\\vec{p}_2$')
-        # Draw the center of mass
-        self.ax.scatter(*center_of_mass, color='black', s=50, label='CM')
-
-        # Draw vectors R1 and R2 from the center of mass to each black hole
-        self.draw_vector(center_of_mass, pos_bh1, 'blue', '$\\vec{R}_1$')
-        self.draw_vector(center_of_mass, pos_bh2, 'red', '$\\vec{R}_2$')
-
-        # Draw angle annotations for phi_jl (angle between total angular momentum and black hole spin)
-        # this is a placeholde -  need to compute the actual angles:
-        #self.draw_angle_arc(pos_bh1, 0.1, 0, 45, 'green', '$\\phi_{JL}$')
-
-    def draw_system(self, pos_bh1, pos_bh2, spin_bh1, spin_bh2, momentum_bh1, momentum_bh2, center_of_mass, lum_dist_vector):
-        # Call other methods to draw the black holes, spins, orbit, and luminosity distance
-        self.draw_black_holes(pos_bh1, pos_bh2, spin_bh1, spin_bh2, momentum_bh1, momentum_bh2, center_of_mass)
-        self.draw_orbit(center_of_mass, 0.35)
-        self.draw_luminosity_distance(center_of_mass, lum_dist_vector)
+        # Apply moving average to refine the noise
+        refined_noise = apply_moving_average(extended_noise, window_size)
         
-        orbital_normal = np.array([0, 0, 1])  # the orbital plane is in the xy-plane
-
-        self.draw_spin_angle(pos_bh1, spin_bh1, orbital_normal, 'green', 'θ1')
-        self.draw_spin_angle(pos_bh2, spin_bh2, orbital_normal, 'green', 'θ2')
-
+        # Create a new PSD based on the refined noise
+        refined_noise_ft = np.fft.rfft(refined_noise)
+        refined_psd_values = np.abs(refined_noise_ft)**2 / (sampling_frequency * extended_duration)
+        refined_freqs = np.fft.rfftfreq(len(refined_noise), 1/sampling_frequency)
         
-        
-        
-        spin_legend_1 = Line2D([0], [0], linestyle="none", marker=">", color='blue', label='$\\vec{a}_1$')
-        spin_legend_2 = Line2D([0], [0], linestyle="none", marker=">", color='red', label='$\\vec{a}_2$')
-        mom_legend_1 = Line2D([0], [0], linestyle="none", marker=">", color='blue', label='$\\vec{P}_1$')
-        mom_legend_2 = Line2D([0], [0], linestyle="none", marker=">", color='red', label='$\\vec{P}_2$')
-        
- 
-        ''' arc attampet
-        ## Then when calling the draw_arc_3d method:
-        theta_normal = np.array([0, 0, 1])  # Normal to the orbital plane
-        phi_jl_normal = calculate_normal_to_plane(spin_bh1 + spin_bh2, [0, 0, 1])  # Normal to the total spin
+        # Update the interferometer's PSD with the refined PSD
+        ifo.power_spectral_density = PowerSpectralDensity(frequency_array=refined_freqs, psd_array=refined_psd_values)
 
-        # Assuming start_angle and end_angle
-        start_angle_theta = 0
-        end_angle_theta = np.degrees(np.arccos(np.dot(spin_bh1, [0, 0, 1]) / np.linalg.norm(spin_bh1)))
-        start_angle_phi_jl = 0
-        end_angle_phi_jl = np.degrees(np.arccos(np.dot(spin_bh1 + spin_bh2, [0, 0, 1]) / np.linalg.norm(spin_bh1 + spin_bh2)))
+        # Set the strain data directly from the refined noise
+        ifo.set_strain_data_from_frequency_domain_strain(refined_noise_ft, sampling_frequency=sampling_frequency)
+def generate_refined_noise(ifo, duration, sampling_frequency, noise_refinement_time):
+    """
+    Generates refined noise for an interferometer based on an extended duration and applies a moving average.
+    """
+    # Calculate the extended duration based on the refinement time
+    extended_duration = duration * noise_refinement_time
 
-        # Draw the arcs
-        # self.draw_arc_3d(pos_bh1, theta_normal, 0.1, start_angle_theta, end_angle_theta, 'green', 'θ₁')
-        # self.draw_arc_3d(pos_bh2, theta_normal, 0.1, start_angle_theta, end_angle_theta, 'green', 'θ₂')
-        # self.draw_arc_3d(center_of_mass, phi_jl_normal, 0.2, start_angle_phi_jl, end_angle_phi_jl, 'orange', 'φ_JL')
-       
-        # Draw angles with viewing lines
-        # self.draw_angle_with_viewing_line(pos_bh1, spin_bh1, [0, 0, 1], 0.1, 'green', '$\\theta_1$')
-        # self.draw_angle_with_viewing_line(pos_bh2, spin_bh2, [0, 0, 1], 0.1, 'green', '$\\theta_2$')
-        # self.draw_angle_with_viewing_line(center_of_mass, spin_bh1 + spin_bh2, [0, 0, 1], 0.2, 'orange', '$\\phi_{JL}$')
-        '''
+    # Generate the extended noise realization
+    noise_series = ifo.power_spectral_density.sample_noise(extended_duration, sampling_frequency)
+
+    # Apply a moving average to the extended noise to refine it
+    window_size = int(sampling_frequency * duration / noise_refinement_time)  # Window size for the moving average
+    refined_noise = convolve(noise_series, np.ones(window_size)/window_size, mode='same', method='auto')
+
+    # Trim the refined noise to match the original duration
+    start_index = len(refined_noise) // 2 - int(sampling_frequency * duration / 2)
+    end_index = start_index + int(sampling_frequency * duration)
+    trimmed_refined_noise = refined_noise[start_index:end_index]
+
+    return trimmed_refined_noise
+def generate_time_domain_noise_from_psd(psd, duration, sampling_frequency):
+    N = int(duration * sampling_frequency)
+    freqs = np.fft.rfftfreq(N, d=1/sampling_frequency)
+    
+    # Interpolate PSD to match the frequency bins
+    psd_interp_func = interp1d(psd.frequency_array, psd.psd_array, bounds_error=False, fill_value="extrapolate")
+    psd_values = psd_interp_func(freqs)
+    
+    # Generate complex noise in the frequency domain
+    noise_fd = (np.random.normal(size=len(psd_values)) + 1j * np.random.normal(size=len(psd_values))) * np.sqrt(psd_values / 2)
+    
+    # Inverse FFT to obtain time-domain noise
+    noise_td = np.fft.irfft(noise_fd, n=N)
+    
+    return noise_td
+
+def refine_noise_with_moving_average(noise, window_size):
+    kernel = np.ones(window_size) / window_size
+    refined_noise = fftconvolve(noise, kernel, mode='same')
+    return refined_noise
+
+import numpy as np
+from gwpy.frequencyseries import FrequencySeries
+
+def apply_refined_noise(ifos, noise_time_factor, sampling_frequency, duration, outdir, label):
+    window_size = int(sampling_frequency / noise_time_factor)
+    
+    for ifo in ifos:
+        # Generate and refine noise in the time domain
+        noise_td = generate_time_domain_noise_from_psd(ifo.power_spectral_density, duration, sampling_frequency)
+        refined_noise_td = refine_noise_with_moving_average(noise_td, window_size)
         
-        
-        
-        # Update the legend to include all new elements
-        self.ax.legend(loc='upper right', fontsize='small')
-        handles, labels = self.ax.get_legend_handles_labels()
-        handles.extend([spin_legend_1, spin_legend_2, mom_legend_1, mom_legend_2])  # Add custom handles for spins
+        # Convert the original and refined noise back to the frequency domain
+        original_noise_fd = np.fft.rfft(noise_td)
+        refined_noise_fd = np.fft.rfft(refined_noise_td)
+        freqs = np.fft.rfftfreq(len(noise_td), d=1.0/sampling_frequency)
 
-        # Draw the legend
-        self.ax.legend(handles=handles, loc='upper right', fontsize='small')
+        # Plot and save the noise graph
+        plt.figure(figsize=(10, 6))
+        plt.loglog(freqs, np.abs(original_noise_fd), label='Original Noise', alpha=0.7)
+        plt.loglog(freqs, np.abs(refined_noise_fd), label='Refined Noise', linestyle='--')
+        plt.xlabel('Frequency (Hz)')
+        plt.ylabel('Strain amplitude')
+        plt.title(f'Noise Spectrum Comparison for {ifo.name}')
+        plt.legend()
+        plt.grid(True, which="both", ls="--")
+        plt.savefig(f"{outdir}/{ifo.name}_{label}_noise_comparison.png")
+        plt.close()
 
+        # Create a FrequencySeries object for the refined noise
+        refined_noise_series = FrequencySeries(refined_noise_fd, frequencies=freqs, df=freqs[1] - freqs[0])
 
+        # Manually update the strain data of the interferometer
+        ifo.strain_data.set_from_frequency_domain_strain(refined_noise_series.value, sampling_frequency=sampling_frequency, duration=duration)
