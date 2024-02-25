@@ -6,7 +6,8 @@ from scipy.signal import convolve
 from scipy.interpolate import interp1d
 from scipy.signal import fftconvolve
 import matplotlib.pyplot as plt
-
+import numpy as np
+from gwpy.frequencyseries import FrequencySeries
 def calculate_chirp_mass_and_ratio(m1, m2):
     chirp_mass = (m1 * m2) ** (3./5.) / (m1 + m2) ** (1./5.)
     mass_ratio = m2 / m1
@@ -160,25 +161,34 @@ def refine_noise_with_moving_average(noise, window_size):
     refined_noise = fftconvolve(noise, kernel, mode='same')
     return refined_noise
 
-import numpy as np
-from gwpy.frequencyseries import FrequencySeries
+def refine_noise_in_frequency_domain(noise_td, sampling_frequency, window_size):
+    # Convert the noise to the frequency domain
+    noise_fd = np.fft.rfft(noise_td)
+    freqs = np.fft.rfftfreq(len(noise_td), d=1.0/sampling_frequency)
+    
+    # Create a kernel for the moving average in the frequency domain
+    kernel = np.ones(window_size) / window_size
+    # Apply the moving average to the amplitude of the noise spectrum
+    refined_amplitude = fftconvolve(np.abs(noise_fd), kernel, mode='same')
+    # Preserve the phase of the original noise
+    phase = np.angle(noise_fd)
+    # Combine the refined amplitude with the original phase
+    refined_noise_fd = refined_amplitude * np.exp(1j * phase)
+    
+    return refined_noise_fd, freqs
 
 def apply_refined_noise(ifos, noise_time_factor, sampling_frequency, duration, outdir, label):
     window_size = int(sampling_frequency / noise_time_factor)
     
     for ifo in ifos:
-        # Generate and refine noise in the time domain
+        # Generate noise in the time domain
         noise_td = generate_time_domain_noise_from_psd(ifo.power_spectral_density, duration, sampling_frequency)
-        refined_noise_td = refine_noise_with_moving_average(noise_td, window_size)
+        # Refine the noise in the frequency domain
+        refined_noise_fd, freqs = refine_noise_in_frequency_domain(noise_td, sampling_frequency, window_size)
         
-        # Convert the original and refined noise back to the frequency domain
-        original_noise_fd = np.fft.rfft(noise_td)
-        refined_noise_fd = np.fft.rfft(refined_noise_td)
-        freqs = np.fft.rfftfreq(len(noise_td), d=1.0/sampling_frequency)
-
         # Plot and save the noise graph
         plt.figure(figsize=(10, 6))
-        plt.loglog(freqs, np.abs(original_noise_fd), label='Original Noise', alpha=0.7)
+        plt.loglog(freqs, np.abs(np.fft.rfft(noise_td)), label='Original Noise', alpha=0.7)
         plt.loglog(freqs, np.abs(refined_noise_fd), label='Refined Noise', linestyle='--')
         plt.xlabel('Frequency (Hz)')
         plt.ylabel('Strain amplitude')
@@ -187,9 +197,6 @@ def apply_refined_noise(ifos, noise_time_factor, sampling_frequency, duration, o
         plt.grid(True, which="both", ls="--")
         plt.savefig(f"{outdir}/{ifo.name}_{label}_noise_comparison.png")
         plt.close()
-
-        # Create a FrequencySeries object for the refined noise
-        refined_noise_series = FrequencySeries(refined_noise_fd, frequencies=freqs, df=freqs[1] - freqs[0])
-
-        # Manually update the strain data of the interferometer
-        ifo.strain_data.set_from_frequency_domain_strain(refined_noise_series.value, sampling_frequency=sampling_frequency, duration=duration)
+        
+        # Update the strain data of the interferometer
+        ifo.strain_data.set_from_frequency_domain_strain(refined_noise_fd, sampling_frequency=sampling_frequency, duration=duration)
