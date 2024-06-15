@@ -8,6 +8,8 @@ from scipy.signal import fftconvolve
 import matplotlib.pyplot as plt
 import numpy as np
 from gwpy.frequencyseries import FrequencySeries
+import matplotlib.lines as mlines
+
 def calculate_chirp_mass_and_ratio(m1, m2):
     chirp_mass = (m1 * m2) ** (3./5.) / (m1 + m2) ** (1./5.)
     mass_ratio = m2 / m1
@@ -200,3 +202,38 @@ def apply_refined_noise(ifos, noise_time_factor, sampling_frequency, duration, o
         
         # Update the strain data of the interferometer
         ifo.strain_data.set_from_frequency_domain_strain(refined_noise_fd, sampling_frequency=sampling_frequency, duration=duration)
+
+def compare_corner_plots_bilby(noise_time_1, noise_time_2, labels, outdir):
+    
+    # Load the result objects from the JSON files
+    result_file_1 = rf'/home/useradd/projects/bilby/MyStuff/my_outdir/Noise_Levels/noise_time_{noise_time_1}/noise_time_{noise_time_1}_result.json'
+    result_file_2 = rf'/home/useradd/projects/bilby/MyStuff/my_outdir/Noise_Levels/noise_time_{noise_time_2}/noise_time_{noise_time_2}_result.json'  
+    result_1 = bilby.result.read_in_result(filename=result_file_1)
+    result_2 = bilby.result.read_in_result(filename=result_file_2)
+    
+    # Define the true values for the corner plot based on injection parameters
+    true_values_1 = [result_1.injection_parameters[label] for label in labels]
+    true_values_2 = [result_2.injection_parameters[label] for label in labels]
+
+
+
+    # Plot the first corner plot
+    fig = result_1.plot_corner(parameters=labels, color='blue', truths=true_values_1, save=False)
+
+    # Plot the second corner plot on top
+    result_2.plot_corner(parameters=labels, color='red', truths=true_values_2, fig=fig, save=False)
+
+    # Create custom legend
+    legend_blue = mlines.Line2D([], [], color='blue', label=f'Noise Time {noise_time_1}')
+    legend_red = mlines.Line2D([], [], color='red', label=f'Noise Time {noise_time_2}')
+
+    # Add the legend to the corner plot
+    plt.legend(handles=[legend_blue, legend_red], loc='upper right', fontsize='small')
+
+    # Save the combined plot
+    filename = f"{outdir}/combined_corner_plot_{noise_time_1}_{noise_time_2}.png"
+    plt.savefig(filename)
+    print(f"Plot saved to {filename}")
+    plt.close()
+
+    return fig

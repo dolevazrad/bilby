@@ -17,3 +17,5 @@ outdir/*
 .idea/*
 *.json
 *.pickle
+*.old
+*.old
