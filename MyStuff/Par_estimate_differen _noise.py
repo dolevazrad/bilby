@@ -1,5 +1,6 @@
 import os
 import time
+
 import numpy as np
 import bilby
 import matplotlib.pyplot as plt
@@ -54,7 +55,7 @@ def generate_or_load_noise(ifos, noise_time, sampling_frequency, duration, outdi
         # Load the noise from file
         noise_data = np.load(noise_file_path, allow_pickle=True)
         for ifo, data in zip(ifos, noise_data):
-            ifo.strain_data.set_from_frequency_domain_strain(data)
+            ifo.strain_data.set_from_frequency_domain_strain(data, duration = duration, sampling_frequency = sampling_frequency)
 
 def timed_run_with_noise_time(noise_time, label):
     start_time = time.time()  # Start time
@@ -83,16 +84,20 @@ def run_with_noise_time(noise_time, label='BaseLine'):
         waveform_arguments=waveform_arguments
     )
         
+
     ifos.inject_signal(waveform_generator=waveform_generator, parameters=injection_parameters)
+
 
     priors = bilby.gw.prior.BBHPriorDict(injection_parameters.copy())
     priors["mass_1"] = bilby.core.prior.Uniform(25, 40, "mass_1")
     priors["mass_2"] = bilby.core.prior.Uniform(25, 40, "mass_2")
     priors["luminosity_distance"] = bilby.core.prior.Uniform(400, 2000, "luminosity_distance")
 
+
     likelihood = bilby.gw.likelihood.GravitationalWaveTransient(
         interferometers=ifos, waveform_generator=waveform_generator, priors=priors
     )
+
 
     result = bilby.run_sampler(
         likelihood=likelihood,
@@ -107,6 +112,7 @@ def run_with_noise_time(noise_time, label='BaseLine'):
 
     tru = {'mass_1': 36.0, 'mass_2': 29.0, 'luminosity_distance': 1000.0}
     result.plot_corner(truths=tru, filename=f'{outdir}/{label}_corner.png')
+
 
     plt.close()
 

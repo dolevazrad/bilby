@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from gwpy.frequencyseries import FrequencySeries
 import matplotlib.lines as mlines
+import os 
 
 def calculate_chirp_mass_and_ratio(m1, m2):
     chirp_mass = (m1 * m2) ** (3./5.) / (m1 + m2) ** (1./5.)
@@ -202,6 +203,46 @@ def apply_refined_noise(ifos, noise_time_factor, sampling_frequency, duration, o
         
         # Update the strain data of the interferometer
         ifo.strain_data.set_from_frequency_domain_strain(refined_noise_fd, sampling_frequency=sampling_frequency, duration=duration)
+
+def plot_noise_comparison_subplots(initial_noise_fds, degraded_noises_list, sampling_frequency, labels, duration , outdir):
+    """
+    Plots and saves separate comparisons of initial noise and its degraded versions for each interferometer.
+    
+    Parameters:
+    - initial_noise_fds: List of initial frequency domain noise arrays for different interferometers (H1, L1).
+    - degraded_noises_list: List of lists of degraded noise arrays for different days and interferometers.
+    - sampling_frequency: The sampling frequency of the noise data.
+    - labels: Labels for each line in the plot, corresponding to each noise day.
+    - outdir: Directory to save the plot.
+    """
+    # Frequency array
+    freqs = np.fft.rfftfreq(int(duration * sampling_frequency), d=1/sampling_frequency)
+    
+    plt.figure(figsize=(12, 8))
+    
+    # Creating subplots for each interferometer
+    for idx, (initial_noise_fd, ifo_name) in enumerate(zip(initial_noise_fds, ['H1', 'L1'])):
+        plt.subplot(2, 1, idx + 1)
+        initial_psd = np.abs(initial_noise_fd) ** 2
+        plt.loglog(freqs, initial_psd, label='Initial Noise', linestyle='-', linewidth=2)
+
+        for degraded_noises, day_label in zip(degraded_noises_list, labels):
+            degraded_psd = np.abs(degraded_noises) ** 2
+            plt.loglog(freqs, degraded_psd, label=f'Degraded {day_label}')
+        
+        plt.title(f'Comparison of Noise Spectra for {ifo_name}')
+        plt.xlabel('Frequency (Hz)')
+        plt.ylabel('Power Spectral Density')
+        plt.legend()
+        plt.grid(True, which="both", ls="--")
+    
+    plt.tight_layout()
+    
+    # Saving the plot
+    plot_filename = os.path.join(outdir, 'noise_comparison_plot_subplots.png')
+    plt.savefig(plot_filename)
+    plt.close()
+    print(f"Plot saved to {plot_filename}")
 
 def compare_corner_plots_bilby(noise_time_1, noise_time_2, labels, outdir):
     
