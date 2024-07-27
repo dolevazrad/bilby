@@ -8,7 +8,7 @@ import time
 # Define the event and get the initial strain data at detection
 event = 'GW150914'
 gps_time = event_gps(event)
-detector = 'H1'  # Using H1 as an example
+detector = 'H1'  
 
 # Define output directory
 PARENT_LABEL = "Analyzing_GW_Noise"
@@ -25,13 +25,13 @@ logging.basicConfig(filename=os.path.join(BASE_OUTDIR, 'process_log.log'), level
 print(f"Data will be saved in: {BASE_OUTDIR}")
 #  time increments for loading data: 30 minutes, 1 hour, 48 hours, and 96 days
 increments = [1800, 3600, 172800, 8294400]  # 30 mins, 1 hour, 48 hours, 96 days
-fftlength = 60 #1800  # 30 minutes
-overlap = 30#900    # 15 minutes
+fftlength = 600 #1800  # 30 minutes
+overlap = 300#900    # 15 minutes
 # Create output directory if it does not exist
 if not os.path.exists(BASE_OUTDIR):
     os.makedirs(BASE_OUTDIR)
     
-def fetch_and_process_strain(detector, start_time, increments, max_retries=3):
+def fetch_and_process_strain(detector, start_time, increments, max_retries=3, base_sleep=2):
     """ Fetch and process strain data incrementally and save at specified durations. """
     max_duration = max(increments)
     end_time = start_time + max_duration
@@ -48,11 +48,12 @@ def fetch_and_process_strain(detector, start_time, increments, max_retries=3):
             try:
                 # Fetch data for the current 30-minute interval
                 interval_end = min(current_time + fftlength, end_time)
-                strain = TimeSeries.fetch_open_data(detector, current_time, interval_end, cache=True)
+                strain = TimeSeries.fetch_open_data(detector, current_time, interval_end, cache=True, verbose=True )
                 
                 # Compute the PSD of this interval
                 psd = strain.psd(fftlength=fftlength, overlap=overlap, window='hann')
-                
+                #psd = strain.psd(4, 2)
+
                 # Sum the PSDs cumulatively
                 cumulative_psd = psd if cumulative_psd is None else cumulative_psd + psd
 
@@ -86,12 +87,15 @@ def fetch_and_process_strain(detector, start_time, increments, max_retries=3):
                     current_time = current_time + fftlength # Skip to next interval if max retries reached
                     failure_count = failure_count + 1
                     count = count + 1
+                else:
+                    time.sleep(base_sleep * (2 ** retry_count))  # Exponential backoff
 
                     logging.error(f"Error fetching data from {current_time} to {interval_end}: {e} in {max_retries} tries")
+    return success_count, failure_count
 
 
 
 if __name__ == "__main__":
-    fetch_and_process_strain(detector, gps_time, increments)
-    print("All analysis completed.")
-    logging.info("All analysis completed.")
+    success_count, failure_count = fetch_and_process_strain(detector, gps_time, increments)
+    print(f"All analysis completed. Success: {success_count}, Failures: {failure_count}")
+    logging.info(f"All analysis completed. Success: {success_count}, Failures: {failure_count}")
