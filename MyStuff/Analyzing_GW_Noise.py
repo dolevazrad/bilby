@@ -3,62 +3,78 @@ import numpy as np
 import matplotlib.pyplot as plt
 from gwpy.timeseries import TimeSeries
 from gwosc.datasets import event_gps
-
+import logging
+import time
 # Define the event and get the initial strain data at detection
 event = 'GW150914'
 gps_time = event_gps(event)
 detector = 'H1'  # Using H1 as an example
 
-# Define durations in seconds (1 day, 5 days, 20 days, 50 days, 100 days)
-durations = [86400, 5*86400, 20*86400, 50*86400, 100*86400]
-
-# Function to fetch and process strain data
-def fetch_and_process_strain(detector, start_time, duration):
-    try:
-        print(f"Fetching data for {detector} from {start_time} for {duration} seconds")
-        strain = TimeSeries.fetch_open_data(detector, start_time, start_time + duration, cache=True)
-        psd = strain.psd(4, 2)
-        return psd
-    except Exception as e:
-        print(f"Error fetching data for {detector} at {start_time}: {e}")
-        return None
-
 # Define output directory
 PARENT_LABEL = "Analyzing_GW_Noise"
-BASE_OUTDIR = f'/home/useradd/projects/bilby/MyStuff/my_outdir/{PARENT_LABEL}'
-
+user = os.environ.get('USER', 'default_user')
+if user == 'useradd':
+    BASE_OUTDIR = f'/home/{user}/projects/bilby/MyStuff/my_outdir/{PARENT_LABEL}'
+elif user == 'dolev':
+    BASE_OUTDIR = f'/home/{user}/code/bilby/MyStuff/my_outdir/{PARENT_LABEL}'
+if not os.path.exists(BASE_OUTDIR):
+    os.makedirs(BASE_OUTDIR)
+# Setup logging
+logging.basicConfig(filename=os.path.join(BASE_OUTDIR, 'process_log.log'), level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+print(f"Data will be saved in: {BASE_OUTDIR}")
+#  time increments for loading data: 30 minutes, 1 hour, 48 hours, and 96 days
+increments = [1800, 3600, 172800, 8294400]  # 30 mins, 1 hour, 48 hours, 96 days
+fftlength = 60 #1800  # 30 minutes
+overlap = 30#900    # 15 minutes
 # Create output directory if it does not exist
 if not os.path.exists(BASE_OUTDIR):
     os.makedirs(BASE_OUTDIR)
+    
+def fetch_and_process_strain(detector, start_time, increments, save=True):
+    """ Fetch and process strain data incrementally and save at specified durations. """
+    max_duration = max(increments)
+    end_time = start_time + max_duration
+    cumulative_psd = None
+    
+    current_time = start_time
+    while current_time < end_time:
+        try:
+            # Fetch data for the current 30-minute interval
+            interval_end = min(current_time + fftlength, end_time)
+            strain = TimeSeries.fetch_open_data(detector, current_time, interval_end, cache=True)
+            
+            # Compute the PSD of this interval
+            psd = strain.psd(fftlength=fftlength, overlap=overlap, window='hann')
+            
+            # Sum the PSDs cumulatively
+            cumulative_psd = psd if cumulative_psd is None else cumulative_psd + psd
 
-# Fetch initial strain data at detection
-initial_duration = 86400  # 1 day
-initial_psd = fetch_and_process_strain(detector, gps_time, initial_duration)
+            # Check if it's time to save data at one of the increments
+            increment = interval_end - start_time
+            if increment in increments:
+                filename = f"{BASE_OUTDIR}/{detector}_psd_{increment}.npy"
+                np.save(filename, cumulative_psd.value)  # Save the cumulative PSD value array
+                logging.info(f"Saved PSD to {filename} at {increment} seconds")
+                plt.figure(figsize=(10, 4))
+                plt.loglog(cumulative_psd.frequencies.value, cumulative_psd.value, label=f'{increment/3600:.1f} hours')
+                plt.xlabel('Frequency (Hz)')
+                plt.ylabel('PSD ((strain^2)/Hz)')
+                plt.title(f'Noise PSD after {increment/3600:.1f} hours for {detector}')
+                plt.legend()
+                plt.grid(True)
 
-# Fetch strain data for increasing durations to simulate improvement
-improvement_psds = []
-for duration in durations:
-    psd = fetch_and_process_strain(detector, gps_time, duration)
-    if psd is not None:
-        improvement_psds.append((duration, psd))
+                # Save plot
+                plot_filename = os.path.join(BASE_OUTDIR, f"{detector}_noise_PSD_{increment/3600:.1f}_hours.png")
+                plt.savefig(plot_filename)
+                plt.close()
+                logging.info(f"Plot saved to {plot_filename}")
+            current_time += fftlength
+        except Exception as e:
+            logging.error(f"Error fetching data from {current_time} to {interval_end}: {e}")
+            current_time += fftlength  # Skip to next interval if error occurs
 
-# Plot initial noise strain
-plt.figure(figsize=(10, 6))
-plt.plot(initial_psd.frequencies, np.sqrt(initial_psd), label='Initial (1 day)')
-
-# Plot improved noise strains
-for duration, psd in improvement_psds:
-    plt.plot(psd.frequencies, np.sqrt(psd), label=f'{duration//86400} days')
-
-plt.yscale('log')
-plt.xscale('log')
-plt.xlabel('Frequency (Hz)')
-plt.ylabel('Strain noise')
-plt.legend()
-plt.title(f'Noise Strain Improvement over Time for {event}')
-plt.grid(True)
-
-# Save the plot
-output_file = os.path.join(BASE_OUTDIR, 'noise_strain_improvement.png')
-plt.savefig(output_file)
-print(f"Plot saved to {output_file}")
+if __name__ == "__main__":
+    fetch_and_process_strain(detector, gps_time, increments)
+    print("All analysis completed.")
+    logging.info("All analysis completed.")
