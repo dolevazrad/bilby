@@ -19,3 +19,5 @@ outdir/*
 *.pickle
 *.old
 *.old
+*.hdf5
+*.npy
