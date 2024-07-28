@@ -5,10 +5,26 @@ from gwpy.timeseries import TimeSeries
 from gwosc.datasets import event_gps
 import logging
 import time
+from json.decoder import JSONDecodeError
+import requests
+
 # Define the event and get the initial strain data at detection
 event = 'GW150914'
-gps_time = event_gps(event)
-detector = 'H1'  
+# Function to fetch GPS time with robust error handling
+def fetch_event_gps(event, max_retries=3, base_sleep=2):
+    retry_count = 0
+    while retry_count < max_retries:
+        try:
+            return event_gps(event)
+        except (requests.exceptions.RequestException, JSONDecodeError) as e:
+            logging.error(f"Error fetching GPS time for {event}: {e}")
+            retry_count += 1
+            if retry_count >= max_retries:
+                raise
+            else:
+                time.sleep(base_sleep * (2 ** retry_count))
+
+
 
 # Define output directory
 PARENT_LABEL = "Analyzing_GW_Noise"
@@ -30,7 +46,11 @@ overlap = 300#900    # 15 minutes
 # Create output directory if it does not exist
 if not os.path.exists(BASE_OUTDIR):
     os.makedirs(BASE_OUTDIR)
-    
+# Fetch GPS time for the event
+gps_time = fetch_event_gps(event)
+logging.info(f"fetched GPS time for {event}, Time:{gps_time}")
+
+detector = 'H1'      
 def fetch_and_process_strain(detector, start_time, increments, max_retries=3, base_sleep=2):
     """ Fetch and process strain data incrementally and save at specified durations. """
     max_duration = max(increments)
@@ -79,7 +99,7 @@ def fetch_and_process_strain(detector, start_time, increments, max_retries=3, ba
                 success_count = success_count + 1
                 count = count + 1
                 current_time = current_time + fftlength
-                logging.error(f" fetching data from {current_time} to {interval_end} succeeded ")
+                logging.info(f" fetching data from {current_time} to {interval_end} succeeded ")
             except Exception as e:
                 retry_count += 1
                 logging.error(f"Error fetching data from {current_time} to {interval_end}: {e} retry:{retry_count} out of {max_retries}")
