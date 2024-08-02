@@ -7,6 +7,7 @@ import logging
 import time
 from json.decoder import JSONDecodeError
 import requests
+from datetime import date
 
 
 # Function to fetch GPS time with robust error handling
@@ -35,8 +36,13 @@ elif user == 'dolev':
 if not os.path.exists(BASE_OUTDIR):
     os.makedirs(BASE_OUTDIR)
 # Setup logging
-logging.basicConfig(filename=os.path.join(BASE_OUTDIR, 'process_log.log'), level=logging.INFO,
+
+today = date.today().strftime("%Y-%m-%d")
+log_filename = f'process_log_{today}.log'
+
+logging.basicConfig(filename=os.path.join(BASE_OUTDIR, log_filename), level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
+
 print(f"Data will be saved in: {BASE_OUTDIR}")
 #  time increments for loading data: 30 minutes, 1 hour, 48 hours, and 96 days
 
