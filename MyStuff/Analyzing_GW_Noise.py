@@ -8,8 +8,64 @@ import time
 from json.decoder import JSONDecodeError
 import requests
 from datetime import date
+import shutil
+from astropy.utils.data import get_cached_urls, clear_download_cache
 
+def check_disk_space(min_space_gb=10):
+    """Check if there's enough disk space available."""
+    total, used, free = shutil.disk_usage("/")
+    free_gb = free // (2**30)
+    return free_gb >= min_space_gb
 
+def clear_astropy_cache(age_in_days=30, specific_url=None):
+    """
+    Clear Astropy cache files.
+    
+    Parameters:
+    age_in_days (int): Clear files older than this many days. Default is 30.
+    specific_url (str): If provided, clear only the cache for this specific URL.
+    """
+    if specific_url:
+        try:
+            clear_download_cache(specific_url)
+            logging.info(f"Cleared cache for specific URL: {specific_url}")
+        except Exception as e:
+            logging.error(f"Failed to clear cache for URL {specific_url}: {e}")
+    else:
+        try:
+            cached_urls = get_cached_urls()
+            for url in cached_urls:
+                try:
+                    clear_download_cache(url)
+                    logging.info(f"Cleared cache for URL: {url}")
+                except Exception as e:
+                    logging.error(f"Failed to clear cache for URL {url}: {e}")
+            logging.info(f"Finished clearing Astropy cache files older than {age_in_days} days")
+        except Exception as e:
+            logging.error(f"Failed to clear Astropy cache: {e}")
+    # logging.warning("Attempting fallback method to clear cache...")
+    # try:
+    #     cache_dir = os.path.expanduser('~/.astropy/cache')
+    #     for root, dirs, files in os.walk(cache_dir):
+    #         for file in files:
+    #             file_path = os.path.join(root, file)
+    #             file_age = now - datetime.fromtimestamp(os.path.getmtime(file_path))
+    #             if file_age > timedelta(days=age_in_days):
+    #                 os.remove(file_path)
+    #                 logging.info(f"Removed cached file: {file_path}")
+    #     logging.info("Fallback cache clearing completed")
+    # except Exception as e:
+    #     logging.error(f"Fallback cache clearing failed: {e}")
+
+def check_and_clear_space(min_space_gb=10, cache_age_days=30):
+    """Check disk space and clear cache if necessary."""
+    if not check_disk_space(min_space_gb):
+        logging.warning("Low disk space. Attempting to clear Astropy cache.")
+        clear_astropy_cache(age_in_days=cache_age_days)
+        if not check_disk_space(min_space_gb):
+            logging.error("Still low on disk space after clearing cache.")
+            return False
+    return True
 # Function to fetch GPS time with robust error handling
 def fetch_event_gps(event, max_retries=3, base_sleep=2):
     retry_count = 0
@@ -73,6 +129,9 @@ def save_psd_and_plot(cumulative_psd, increment, detector):
     logging.info(f"Plot saved to {plot_filename}")
 
 def fetch_and_process_strain(detector, start_time, increments, max_retries=3, base_sleep=2):
+    if not check_and_clear_space():
+        logging.error("Insufficient disk space. Aborting.")
+        return 0, 0
     max_duration = max(increments)
     end_time = start_time + max_duration
     cumulative_psd = None
@@ -82,6 +141,9 @@ def fetch_and_process_strain(detector, start_time, increments, max_retries=3, ba
     current_time = start_time
 
     while current_time < end_time:
+        if not check_and_clear_space():
+            logging.error("Ran out of disk space during processing. Aborting.")
+            break
         try:
             # Try to fetch data for the full interval
             interval_end = min(current_time + fftlength, end_time)
@@ -104,12 +166,15 @@ def fetch_and_process_strain(detector, start_time, increments, max_retries=3, ba
 
             # Move to the next time interval
             current_time += strain.duration.value if strain.duration.value > 0 else fftlength
+            logging.info(f'success_count:{success_count} out of {failure_count+success_count}')
 
         except Exception as e:
             logging.error(f"Error processing data from {current_time} to {interval_end}: {e}")
             failure_count += 1
             # Move to the next time interval even if there was an error
             current_time += fftlength
+            logging.info(f'success_count:{success_count} out of {failure_count+success_count}')
+
 
     return success_count, failure_count
 
