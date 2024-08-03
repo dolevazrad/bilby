@@ -130,18 +130,40 @@ def save_psd_and_plot(cumulative_psd, increment, detector, total_processed_durat
     plt.close()
     logging.info(f"Plot saved to {plot_filename}")
 
-def find_data_gaps(strain, gap_threshold=0.1):
+def find_data_gaps(strain, gap_threshold=0.1, nan_threshold=1):
     """
-    Identify gaps in the strain data.
-    gap_threshold is the minimum gap size in seconds to be considered.
+    Identify gaps in the strain data, including NaN stretches.
+    gap_threshold is the minimum time gap size in seconds to be considered.
+    nan_threshold is the minimum number of consecutive NaN values to be considered a gap.
     """
     time_array = strain.times.value
+    data_array = strain.value
     dt = strain.dt.value
     gaps = []
+    nan_start = None
+    nan_count = 0
+
     for i in range(1, len(time_array)):
+        # Check for time gaps
         gap_size = time_array[i] - time_array[i-1] - dt
         if gap_size > gap_threshold:
-            gaps.append((time_array[i-1], time_array[i], gap_size))
+            gaps.append((time_array[i-1], time_array[i], gap_size, "time gap"))
+        
+        # Check for NaN values
+        if np.isnan(data_array[i]):
+            if nan_start is None:
+                nan_start = time_array[i-1]
+            nan_count += 1
+        else:
+            if nan_count >= nan_threshold:
+                gaps.append((nan_start, time_array[i-1], (time_array[i-1] - nan_start), "NaN stretch"))
+            nan_start = None
+            nan_count = 0
+
+    # Check if there's a NaN stretch at the end of the data
+    if nan_count >= nan_threshold:
+        gaps.append((nan_start, time_array[-1], (time_array[-1] - nan_start), "NaN stretch"))
+
     return gaps
 
 def check_for_nans(data, data_type):
@@ -178,11 +200,12 @@ def fetch_and_process_strain(detector, start_time, increments, fftlength, max_re
                 gaps = find_data_gaps(strain)
                 if gaps:
                     logging.info(f"Found {len(gaps)} gaps in data from {current_time} to {interval_end}")
-                    for start, end, duration in gaps:
-                        logging.info(f"Gap from {start} to {end}, duration: {duration} seconds")
+                    for start, end, duration, gap_type in gaps:
+                        logging.info(f"{gap_type.capitalize()} from {start} to {end}, duration: {duration} seconds")
+            
                 
                 last_end = strain.times.value[0]
-                for gap_start, gap_end, _ in gaps + [(strain.times.value[-1], None, None)]:
+                for gap_start, gap_end, _, _ in gaps + [(strain.times.value[-1], None, None, None)]:
                     segment = strain.crop(last_end, gap_start)
                     if check_for_nans(segment.value, "strain segment"):
                         logging.warning(f"NaN values in strain segment from {segment.t0.value} to {segment.t0.value + segment.duration.value}")
