@@ -230,7 +230,7 @@ def fetch_and_process_strain(detector, start_time, increments, fftlength, max_re
                                     psd_count += 1
                                 
                                 processed_time += segment.duration.value
-                                logging.info(f"PSD calculated successfully for segment. Cumulative PSD count: {psd_count}")
+                                logging.info(f"PSD calculated successfully for segment.from {segment.t0.value} to {segment.t0.value + segment.duration.value}, duration: {segment.duration.value} seconds Cumulative PSD count: {psd_count}")
                                 logging.info(f"Total processed duration: {processed_time} seconds")
                                 
                                 increment = segment.t0.value - start_time + segment.duration.value
@@ -244,11 +244,14 @@ def fetch_and_process_strain(detector, start_time, increments, fftlength, max_re
                             failed_time += segment.duration.value
                     
                     last_end = gap_end if gap_end is not None else gap_start
+                current_time = strain.times.value[-1]
+
             else:
                 logging.info(f"No data available from {current_time} to {interval_end}")
                 failed_time += fftlength
+                current_time += fftlength
 
-            current_time += strain.duration.value if strain.duration.value > 0 else fftlength
+
             logging.info(f'Processed time: {processed_time:.2f} seconds, Failed time: {failed_time:.2f} seconds')
 
         except Exception as e:
