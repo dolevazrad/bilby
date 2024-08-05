@@ -205,7 +205,7 @@ def fetch_and_process_strain(detector, start_time, increments, fftlength, max_re
             
                 
                 last_end = strain.times.value[0]
-                for gap_start, gap_end, _, _ in gaps + [(strain.times.value[-1], None, None, None)]:
+                for i, (gap_start, gap_end, _, _) in enumerate(gaps + [(strain.times.value[-1], None, None, None)]):
                     segment = strain.crop(last_end, gap_start)
                     if check_for_nans(segment.value, "strain segment"):
                         logging.warning(f"NaN values in strain segment from {segment.t0.value} to {segment.t0.value + segment.duration.value}")
@@ -238,11 +238,47 @@ def fetch_and_process_strain(detector, start_time, increments, fftlength, max_re
                                     logging.info(f"Plotting for increment: {increment}")
                                     save_psd_and_plot(cumulative_psd, increment, detector, processed_time)
 
-                                logging.info(f"Processed {segment.duration.value} seconds of data from {segment.t0.value}")
                         except ValueError as ve:
                             logging.error(f"Error in PSD calculation for segment: {ve}")
                             failed_time += segment.duration.value
-                    
+                    # Process the segment after the last gap, if it exists
+                    if i == len(gaps) and gap_end is not None and gap_end < strain.times.value[-1]:
+                        last_segment = strain.crop(gap_end, strain.times.value[-1])
+                        if not np.isnan(last_segment.value).any():
+                            try:
+                                psd = segment.psd(fftlength=psd_fftlength, overlap=psd_fftlength/2, window='hann')
+                                if check_for_nans(psd.value, "PSD"):
+                                    logging.warning(f"NaN values in PSD for segment from {segment.t0.value} to {segment.t0.value + segment.duration.value}")
+                                    failed_time += segment.duration.value
+                                else:
+                                    if cumulative_psd is None:
+                                        cumulative_psd = psd
+                                        psd_count = 1
+                                    else:
+                                        freq_match = np.allclose(cumulative_psd.frequencies.value, psd.frequencies.value)
+                                        if not freq_match:
+                                            logging.warning("Frequency mismatch detected. Resampling new PSD.")
+                                            psd = psd.interpolate(cumulative_psd.frequencies)
+                                        
+                                        cumulative_psd = cumulative_psd * (psd_count / (psd_count + 1)) + psd * (1 / (psd_count + 1))
+                                        psd_count += 1
+                                    
+                                    processed_time += segment.duration.value
+                                    logging.info(f"PSD calculated successfully for segment.from {segment.t0.value} to {segment.t0.value + segment.duration.value}, duration: {segment.duration.value} seconds Cumulative PSD count: {psd_count}")
+                                    logging.info(f"Total processed duration: {processed_time} seconds")
+                                    
+                                    increment = segment.t0.value - start_time + segment.duration.value
+                                    if any(inc <= increment < inc + fftlength for inc in increments):
+                                        logging.info(f"Plotting for increment: {increment}")
+                                        save_psd_and_plot(cumulative_psd, increment, detector, processed_time)
+                                    
+                                    logging.info(f"PSD calculated successfully for last segment from {last_segment.t0.value} to {last_segment.t0.value + last_segment.duration.value}, duration: {last_segment.duration.value} seconds")
+                            except ValueError as ve:
+                                    logging.error(f"Error in PSD calculation for last segment: {ve}")
+                                    failed_time += last_segment.duration.value
+                        else:
+                            logging.warning(f"NaN values in last segment from {last_segment.t0.value} to {last_segment.t0.value + last_segment.duration.value}")
+                            failed_time += last_segment.duration.value
                     last_end = gap_end if gap_end is not None else gap_start
                 current_time = strain.times.value[-1]
 
