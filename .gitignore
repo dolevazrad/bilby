@@ -21,3 +21,4 @@ outdir/*
 *.old
 *.hdf5
 *.npy
+*.pkl
