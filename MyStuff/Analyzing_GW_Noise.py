@@ -87,28 +87,6 @@ def fetch_event_gps(event, max_retries=3, base_sleep=2):
             else:
                 time.sleep(base_sleep * (2 ** retry_count))
 
-def get_representative_asd(detector, start_time, duration=4096):
-    """
-    Get a representative ASD for the detector using gwpy and open data.
-    
-    Parameters:
-    detector (str): Detector name ('H1' or 'L1')
-    start_time (float): GPS start time of the data
-    duration (int): Duration of data to fetch in seconds
-    
-    Returns:
-    FrequencySeries: Representative ASD
-    """
-    try:
-        # Fetch strain data
-        strain = TimeSeries.fetch_open_data(detector, start_time, start_time + duration)
-        
-        # Calculate ASD
-        asd = strain.asd(fftlength=4, overlap=2)
-        return asd
-    except Exception as e:
-        logging.error(f"Error fetching open data: {e}")
-        return None
 
 
 def interpolate_asd(source_freqs, source_asd, target_freqs):
@@ -127,7 +105,7 @@ def interpolate_asd(source_freqs, source_asd, target_freqs):
     return interpolator(target_freqs)
     
 # Define output directory
-PARENT_LABEL = "Analyzing_GW_Noise_v3"
+PARENT_LABEL = "Analyzing_GW_Noise_v4"
 user = os.environ.get('USER', 'default_user')
 if user == 'useradd':
     BASE_OUTDIR = f'/home/{user}/projects/bilby/MyStuff/my_outdir/{PARENT_LABEL}'
@@ -171,19 +149,32 @@ def get_next_increment_index(current_time, start_time, increments):
     return len(increments)  # If we've passed all increments
 
 
-def save_psd_and_plot(cumulative_psd, increment, detector, total_processed_duration, 
-                      start_time, increment_name, psd_count, increments):
-    filename = os.path.join(BASE_OUTDIR, f"{detector}_psd_{increment}.pkl")
+def load_latest_asd(base_dir, detector):
+    asd_files = glob.glob(os.path.join(base_dir, f"{detector}_asd_*.pkl"))
+    if not asd_files:
+        return None, None, None, None, None
+    
+    latest_file = max(asd_files, key=os.path.getctime)
+    
+    with open(latest_file, 'rb') as f:
+        data = pickle.load(f)
+    
+    return (data['asd'], data['time'], data['failed_time'], 
+            data['asd_count'], data['processed_time'])
+
+def save_asd_and_plot(cumulative_asd, increment, detector, total_processed_duration, 
+                      start_time, increment_name, asd_count, increments):
+    filename = os.path.join(BASE_OUTDIR, f"{detector}_asd_{increment}.pkl")
     data = {
-        'psd': cumulative_psd,
+        'asd': cumulative_asd,
         'time': start_time + increment,
         'failed_time': 0,  # You may want to track this separately
-        'psd_count': psd_count,
+        'asd_count': asd_count,
         'processed_time': total_processed_duration
     }
     with open(filename, 'wb') as f:
         pickle.dump(data, f)
-    logging.info(f"Saved PSD data to {filename} at {increment} seconds")#TODO:no need to save every incremnt
+    logging.info(f"Saved ASD data to {filename} at {increment} seconds")
 
     end_time = start_time + increment
     start_date = Time(start_time, format='gps').iso
@@ -199,26 +190,17 @@ def save_psd_and_plot(cumulative_psd, increment, detector, total_processed_durat
     total_processed_str = format_duration(total_processed_duration/3600)
 
     plt.figure(figsize=(12, 8))
-    if np.any(cumulative_psd.value > 0):
-        frequencies = cumulative_psd.frequencies.value
-        psd_values = cumulative_psd.value
+    if np.any(cumulative_asd.value > 0):
+        frequencies = cumulative_asd.frequencies.value
+        asd_values = cumulative_asd.value
         
-        # Get representative ASD
-        try:
-            true_asd = get_representative_asd(detector, start_time)
-        except Exception as e:
-            logging.error(f"Error getting representative ASD: {e}")
-            true_asd = None
-        
+
         # Frequency range of interest
-        f_min, f_max = 10, 2000  # Hz
+        f_min, f_max = 10, 1000  # Hz
         freq_mask = (frequencies >= f_min) & (frequencies <= f_max)
         
-        plt.subplot(2, 1, 1)
-        plt.loglog(frequencies[freq_mask], np.sqrt(psd_values[freq_mask]), label='Estimated ASD')
-        if true_asd is not None:
-            true_asd_interp = true_asd.interpolate(frequencies)
-            plt.loglog(frequencies[freq_mask], np.sqrt(true_asd_interp.value[freq_mask]), 'r--', label='Open Data ASD')
+        plt.loglog(frequencies[freq_mask], asd_values[freq_mask], label='ASD')
+        
         plt.xlabel('Frequency (Hz)')
         plt.ylabel('ASD (strain/√Hz)')
         plt.title(f'Noise ASD for {detector}\n'
@@ -230,26 +212,10 @@ def save_psd_and_plot(cumulative_psd, increment, detector, total_processed_durat
         plt.legend()
         plt.xlim(f_min, f_max)
         
-        if true_asd is not None:
-            plt.subplot(2, 1, 2)
-            estimated_asd = np.sqrt(psd_values[freq_mask])
-            true_asd_values = np.sqrt(true_asd_interp.value[freq_mask])
-            # Avoid division by zero and log of zero
-            mask = (estimated_asd > 0) & (true_asd_values > 0)
-            ratio = np.zeros_like(estimated_asd)
-            ratio[mask] = np.abs(np.log(estimated_asd[mask] / true_asd_values[mask]))
-            plt.semilogx(frequencies[freq_mask][mask], ratio[mask])
-            plt.xlabel('Frequency (Hz)')
-            plt.ylabel('|Log(estimated/open data)|')
-            plt.title(f'Ratio of Estimated to Open Data ASD (for ~{increment/60:.1f} minutes increment)')
-            plt.grid(True)
-            plt.xlim(f_min, f_max)
-        else:
-            plt.subplot(2, 1, 2)
-            plt.text(0.5, 0.5, 'Open Data ASD not available', ha='center', va='center', transform=plt.gca().transAxes)
+    
     else:
-        plt.text(0.5, 0.5, 'No valid PSD data', ha='center', va='center', transform=plt.gcf().transFigure)
-        plt.title(f'No valid PSD data for {detector}\n'
+        plt.text(0.5, 0.5, 'No valid ASD data', ha='center', va='center', transform=plt.gcf().transFigure)
+        plt.title(f'No valid ASD data for {detector}\n'
                   f'Duration: {increment/60:.1f} minutes\n'
                   f'Start: {Time(start_time, format="gps").iso} (GPS: {start_time})\n'
                   f'End: {Time(start_time + increment, format="gps").iso} (GPS: {start_time + increment})')
@@ -303,13 +269,37 @@ def check_for_nans(data, data_type):
         logging.warning(f"Found {nan_count} NaN values out of {data.size} values in {data_type}")
     return nan_count > 0
 
-def process_segment(segment, next_increment_index, cumulative_psd, psd_count, processed_time, failed_time, start_time, detector, increments, is_last_segment=False):
-    psd_fftlength = 15  # 15 seconds for PSD calculation
 
-    if segment.duration.value < psd_fftlength:
-        logging.info(f"Skipping segment shorter than PSD fftlength: {segment.duration.value} seconds")
+def combine_asds(cumulative_asd, segment_asd, asd_count):
+    # Determine the frequency range to use
+    min_freq = max(cumulative_asd.f0.value, segment_asd.f0.value)
+    max_freq = min(cumulative_asd.f0.value + cumulative_asd.df.value * len(cumulative_asd),
+                   segment_asd.f0.value + segment_asd.df.value * len(segment_asd))
+
+    # Create a new frequency array
+    new_freq = np.linspace(min_freq, max_freq, int((max_freq - min_freq) / min(cumulative_asd.df.value, segment_asd.df.value)))
+
+    # Interpolate both ASDs to the new frequency array
+    cumul_interp = interp1d(cumulative_asd.frequencies.value, cumulative_asd.value, 
+                            bounds_error=False, fill_value='extrapolate')
+    seg_interp = interp1d(segment_asd.frequencies.value, segment_asd.value, 
+                          bounds_error=False, fill_value='extrapolate')
+
+    cumul_values = cumul_interp(new_freq)
+    seg_values = seg_interp(new_freq)
+
+    # Combine the interpolated values
+    combined_value = np.sqrt((cumul_values**2 * asd_count + seg_values**2) / (asd_count + 1))
+
+    return FrequencySeries(combined_value, frequencies=new_freq, unit=cumulative_asd.unit)
+
+def process_segment(segment, next_increment_index, cumulative_asd, asd_count, processed_time, failed_time, start_time, detector, increments, is_last_segment=False):
+    psd_fftlength = segment.duration.value  # Use full segment duration for PSD calculation
+
+    if segment.duration.value < 15:  # Minimum duration for a reliable PSD calculation
+        logging.info(f"Skipping segment shorter than 15 seconds: {segment.duration.value} seconds")
         failed_time += segment.duration.value
-        return cumulative_psd, psd_count, processed_time, failed_time, next_increment_index
+        return cumulative_asd, asd_count, processed_time, failed_time, next_increment_index
 
     # Check for NaNs using find_data_gaps
     gaps = find_data_gaps(segment)
@@ -317,75 +307,70 @@ def process_segment(segment, next_increment_index, cumulative_psd, psd_count, pr
         for start, end, duration, gap_type in gaps:
             logging.warning(f"{gap_type} from {start} to {end}, duration: {duration} seconds")
             failed_time += duration
-        return cumulative_psd, psd_count, processed_time, failed_time, next_increment_index
+        return cumulative_asd, asd_count, processed_time, failed_time, next_increment_index
 
     try:
+        # Calculate PSD for the entire segment
         segment_psd = segment.psd(fftlength=psd_fftlength, overlap=psd_fftlength/2, window='hann')
-        if check_for_nans(segment_psd.value, "PSD"):
-            logging.warning(f"NaN values in PSD for segment from {segment.t0.value} to {segment.t0.value + segment.duration.value}")
-            failed_time += segment.duration.value
-            return cumulative_psd, psd_count, processed_time, failed_time, next_increment_index
-
-        if cumulative_psd is None:
-            cumulative_psd = segment_psd
-            psd_count = 1
-        else:
-            # Ensure consistent frequency bins
-            if not np.array_equal(cumulative_psd.frequencies, segment_psd.frequencies):
-                logging.warning("Frequency mismatch detected. Resampling new PSD.")
-                segment_psd = segment_psd.interpolate(cumulative_psd.frequencies)
-            
-            # Store the unit for later reattachment
-            original_unit = cumulative_psd.unit
-            
-            # Remove units for calculation
-            cumulative_value = cumulative_psd.value
-            segment_value = segment_psd.value
-            
-            # Perform the combination
-            combined_value = (cumulative_value * psd_count + segment_value) / (psd_count + 1)
-            
-            # Reattach the unit
-            cumulative_psd = FrequencySeries(combined_value, frequencies=cumulative_psd.frequencies, unit=original_unit)
         
-        psd_count += 1
+        # Convert PSD to ASD
+        segment_asd = segment_psd**0.5
+
+        if np.any(~np.isfinite(segment_asd.value)):
+            logging.warning(f"Non-finite values in ASD for segment from {segment.t0.value} to {segment.t0.value + segment.duration.value}")
+            failed_time += segment.duration.value
+            return cumulative_asd, asd_count, processed_time, failed_time, next_increment_index
+
+        if cumulative_asd is None:
+            cumulative_asd = segment_asd
+            asd_count = 1
+        else:
+            # Combine ASDs
+            cumulative_asd = combine_asds(cumulative_asd, segment_asd, asd_count)
+        
+        asd_count += 1
         
         processed_time += segment.duration.value
-        logging.info(f"PSD calculated successfully for {'last ' if is_last_segment else ''}segment from {segment.t0.value} to {segment.t0.value + segment.duration.value}, duration: {segment.duration.value} seconds. Cumulative PSD count: {psd_count}")
+        logging.info(f"ASD calculated successfully for {'last ' if is_last_segment else ''}segment from {segment.t0.value} to {segment.t0.value + segment.duration.value}, duration: {segment.duration.value} seconds. Cumulative ASD count: {asd_count}")
         logging.info(f"Total processed duration: {processed_time} seconds")
         
         increment = processed_time
         while next_increment_index < len(increments) and increment >= increments[next_increment_index]:
             inc = increments[next_increment_index]
             logging.info(f"Plotting for increment: {inc}")
-            save_psd_and_plot(cumulative_psd, increment, detector, processed_time, start_time, inc, psd_count, increments)
+            save_asd_and_plot(cumulative_asd, increment, detector, processed_time, start_time, inc, asd_count, increments)
             next_increment_index += 1
         
     except Exception as e:
-        logging.error(f"Error in PSD calculation for {'last ' if is_last_segment else ''}segment: {str(e)}")
+        logging.error(f"Error in ASD calculation for {'last ' if is_last_segment else ''}segment: {str(e)}")
         logging.error(f"Error type: {type(e).__name__}")
         logging.error(f"Error details: {e.args}")
+        logging.error(f"Segment start: {segment.t0.value}, end: {segment.t0.value + segment.duration.value}, duration: {segment.duration.value}")
         failed_time += segment.duration.value
 
-    return cumulative_psd, psd_count, processed_time, failed_time, next_increment_index
+    return cumulative_asd, asd_count, processed_time, failed_time, next_increment_index
+
 def fetch_and_process_strain(detector, start_time, end_time, increments, fftlength):
     if not check_and_clear_space():
         logging.error("Insufficient disk space. Aborting.")
         return 0, 0, 0
 
-    latest_psd, processed_time, failed_time, psd_count, latest_time = load_latest_psd(BASE_OUTDIR, detector)
-    if latest_psd is not None and latest_time is not None:
-        cumulative_psd = latest_psd
+    latest_asd, processed_time, failed_time, asd_count, latest_time = load_latest_asd(BASE_OUTDIR, detector)
+    if latest_asd is not None and latest_time is not None:
+        cumulative_asd = latest_asd
         current_time = latest_time
         next_increment_index = get_next_increment_index(current_time - start_time, 0, increments)
-        logging.info(f"Continuing from time {current_time}, with {psd_count} PSDs. Next increment index: {next_increment_index}")
+        logging.info(f"Continuing from time {current_time}, with {asd_count} ASDs. Next increment index: {next_increment_index}")
     else:
-        cumulative_psd = None
-        psd_count = 0
+        cumulative_asd = None
+        asd_count = 0
         current_time = start_time
         processed_time = 0
         failed_time = 0
         next_increment_index = 0
+
+    consecutive_errors = 0
+    max_consecutive_errors = 5  # Adjust this value as needed
 
     while current_time < end_time:
         if not check_and_clear_space():
@@ -409,14 +394,15 @@ def fetch_and_process_strain(detector, start_time, end_time, increments, fftleng
                     if gap_start > last_end:
                         segment_duration = min(gap_start, end_time) - last_end
                         logging.info(f'Processing segment from {last_end} to {min(gap_start, end_time)} at size {segment_duration}')
-                        if segment_duration >= 15:  # psd_fftlength
+                        if segment_duration >= 15:  # asd_fftlength
                             segment = strain.crop(last_end, min(gap_start, end_time))
-                            cumulative_psd, psd_count, processed_time, failed_time, next_increment_index = process_segment(
-                                segment, next_increment_index, cumulative_psd, psd_count, processed_time, failed_time,
+                            cumulative_asd, asd_count, processed_time, failed_time, next_increment_index = process_segment(
+                                segment, next_increment_index, cumulative_asd, asd_count, processed_time, failed_time,
                                 start_time, detector, increments
                             )
+                            consecutive_errors = 0  # Reset error counter on successful processing
                         else:
-                            logging.info(f"Skipping segment shorter than PSD fftlength: {segment_duration} seconds")
+                            logging.info(f"Skipping segment shorter than ASD fftlength: {segment_duration} seconds")
                             failed_time += segment_duration
                     last_end = gap_end if gap_end is not None else min(gap_start, end_time)
 
@@ -438,19 +424,28 @@ def fetch_and_process_strain(detector, start_time, end_time, increments, fftleng
             failed_time += min(fftlength, end_time - current_time)
             current_time += min(fftlength, end_time - current_time)
             logging.info(f'Processed time: {processed_time:.2f} seconds, Failed time: {failed_time:.2f} seconds')
+            
+            consecutive_errors += 1
+            if consecutive_errors >= max_consecutive_errors:
+                logging.error(f"Encountered {max_consecutive_errors} consecutive errors. Stopping processing.")
+                break
     
-    if cumulative_psd is not None:
-        save_psd_and_plot(cumulative_psd, processed_time, detector, processed_time, start_time, processed_time, psd_count, increments)
+    if cumulative_asd is not None:
+        save_asd_and_plot(cumulative_asd, processed_time, detector, processed_time, start_time, processed_time, asd_count, increments)
     
     return processed_time, failed_time, processed_time + failed_time
+
+    
 if __name__ == "__main__":
     increments = [600, 1800, 3600, 86400, 172800, 604800, 4147200, 8294400, 8295000]
     fftlength = 600
     overlap = 300
-    start_time = 1238166018
-    end_time = start_time + max(increments)  
+    # Start time for GW190403_051519
+    start_time = 1238166919 - 600  # GPS time for 2019-04-03 05:15:19 UTC
+    end_time = start_time + max(increments) + 100 
     detector = 'H1'      
-    
+    # increments = [4147200, 4147300]
+
 
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
