@@ -438,9 +438,12 @@ def fetch_and_process_strain(detector, start_time, end_time, increments, fftleng
     
 if __name__ == "__main__":
     
-    # Start time for GW190403_051519
-    start_time = 1238167519 - 300  # 5 minutes before merger to be safe
-    end_time = 1238167519 + 5184000  # 60 days after merger
+    merger_time = 1238303719  # 2019-04-03 05:15:19 UTC for GW190403_051519
+    # Start time 5 minutes before merger
+    start_time = merger_time - 300  
+
+    # Run for 60 days after merger
+    end_time = merger_time + 5184000
     increments = [
         600,     # 10 minutes
         1800,    # 30 minutes
