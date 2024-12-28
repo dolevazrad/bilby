@@ -437,16 +437,23 @@ def fetch_and_process_strain(detector, start_time, end_time, increments, fftleng
 
     
 if __name__ == "__main__":
-    increments = [600, 1800, 3600, 86400, 172800, 604800, 4147200, 4147200*1.5 ]
+    
+    # Start time for GW190403_051519
+    start_time = 1238167519 - 300  # 5 minutes before merger to be safe
+    end_time = 1238167519 + 5184000  # 60 days after merger
+    increments = [
+        600,     # 10 minutes
+        1800,    # 30 minutes
+        3600,    # 1 hour
+        86400,   # 1 day
+        172800,  # 2 days
+        604800,  # 1 week
+        2592000, # 30 days
+        5184000  # 60 days
+    ]
     fftlength = 600
     overlap = 300
-    # Start time for GW190403_051519
-    start_time = 1238166919 - 600  # GPS time for 2019-04-03 05:15:19 UTC
-    end_time = start_time + max(increments) + 100 
     detector = 'H1'      
-    # increments = [4147200, 4147300]
-
-
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     processed_time, failed_time, total_duration = fetch_and_process_strain(
