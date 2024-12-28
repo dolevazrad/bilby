@@ -105,7 +105,7 @@ def interpolate_asd(source_freqs, source_asd, target_freqs):
     return interpolator(target_freqs)
     
 # Define output directory
-PARENT_LABEL = "Analyzing_GW_Noise_v4"
+PARENT_LABEL = "GW_Noise_H1_L1"
 user = os.environ.get('USER', 'default_user')
 if user == 'useradd':
     BASE_OUTDIR = f'/home/{user}/projects/bilby/MyStuff/my_outdir/{PARENT_LABEL}'
@@ -437,13 +437,31 @@ def fetch_and_process_strain(detector, start_time, end_time, increments, fftleng
 
     
 if __name__ == "__main__":
-    increments = [600, 1800, 3600, 86400, 172800, 604800, 4147200, 8294400, 8295000]
+    increments = [600, 1800, 3600, 86400, 172800, 604800, 4147200, 4147200*1.5 ]
     fftlength = 600
     overlap = 300
     # Start time for GW190403_051519
     start_time = 1238166919 - 600  # GPS time for 2019-04-03 05:15:19 UTC
     end_time = start_time + max(increments) + 100 
     detector = 'H1'      
+    # increments = [4147200, 4147300]
+
+
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+    processed_time, failed_time, total_duration = fetch_and_process_strain(
+        detector, start_time, end_time, increments, fftlength)    
+    print(f"All analysis completed. Success: {processed_time/3600:.2f} hours, "
+          f"Failures: {failed_time/3600:.2f} hours, "
+          f"Total Duration: {total_duration/3600:.2f} hours")
+    logging.info(f"All analysis completed. Success: {processed_time/3600:.2f} hours, "
+                 f"Failures: {failed_time/3600:.2f} hours, "
+                 f"Total Duration: {total_duration/3600:.2f} hours")
+    #runninf for L1
+    # Start time for GW190403_051519
+    start_time = 1238166919 - 600  # GPS time for 2019-04-03 05:15:19 UTC
+    end_time = start_time + max(increments) + 100 
+    detector = 'L1'      
     # increments = [4147200, 4147300]
 
 
