@@ -22,3 +22,4 @@ outdir/*
 *.hdf5
 *.npy
 *.pkl
+!MyStuff/my_outdir/GW_Noise_H1_L1_window/
