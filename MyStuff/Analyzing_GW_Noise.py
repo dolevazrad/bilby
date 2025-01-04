@@ -436,52 +436,64 @@ def fetch_and_process_strain(detector, start_time, end_time, increments, fftleng
     return processed_time, failed_time, processed_time + failed_time
 
     
-if __name__ == "__main__":
     
+    
+if __name__ == "__main__":
     merger_time = 1238303719  # 2019-04-03 05:15:19 UTC for GW190403_051519
-    # Start time 5 minutes before merger
-    start_time = merger_time - 300  
-
-    # Run for 60 days after merger
-    end_time = merger_time + 5184000
-    increments = [
+    
+    # Define window sizes to analyze (in seconds)
+    window_sizes = [
         600,     # 10 minutes
         1800,    # 30 minutes
         3600,    # 1 hour
-        86400,   # 1 day
+        86400,   # 1 day 
         172800,  # 2 days
         604800,  # 1 week
         2592000, # 30 days
         5184000  # 60 days
     ]
+    
     fftlength = 600
     overlap = 300
     detector = 'H1'      
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    processed_time, failed_time, total_duration = fetch_and_process_strain(
-        detector, start_time, end_time, increments, fftlength)    
-    print(f"All analysis completed. Success: {processed_time/3600:.2f} hours, "
-          f"Failures: {failed_time/3600:.2f} hours, "
-          f"Total Duration: {total_duration/3600:.2f} hours")
-    logging.info(f"All analysis completed. Success: {processed_time/3600:.2f} hours, "
-                 f"Failures: {failed_time/3600:.2f} hours, "
-                 f"Total Duration: {total_duration/3600:.2f} hours")
-    #runninf for L1
-    # Start time for GW190403_051519
-    start_time = 1238166919 - 600  # GPS time for 2019-04-03 05:15:19 UTC
-    end_time = start_time + max(increments) + 100 
+    for window_length in window_sizes:
+        # Calculate window boundaries
+        start_time = merger_time - window_length/2
+        end_time = merger_time + window_length/2
+        
+        logging.info(f"\nProcessing window of size {window_length/3600:.2f} hours")
+        logging.info(f"Window from {start_time} to {end_time}")
+        
+        processed_time, failed_time, total_duration = fetch_and_process_strain(
+            detector, start_time, end_time, [window_length], fftlength)
+            
+        print(f"Window {window_length/3600:.2f} hours completed. Success: {processed_time/3600:.2f} hours, "
+              f"Failures: {failed_time/3600:.2f} hours, "
+              f"Total Duration: {total_duration/3600:.2f} hours")
+        logging.info(f"Window {window_length/3600:.2f} hours completed. Success: {processed_time/3600:.2f} hours, "
+                     f"Failures: {failed_time/3600:.2f} hours, "
+                     f"Total Duration: {total_duration/3600:.2f} hours")
+
+    # Running for L1
     detector = 'L1'      
-    # increments = [4147200, 4147300]
-
-
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    processed_time, failed_time, total_duration = fetch_and_process_strain(
-        detector, start_time, end_time, increments, fftlength)    
-    print(f"All analysis completed. Success: {processed_time/3600:.2f} hours, "
-          f"Failures: {failed_time/3600:.2f} hours, "
-          f"Total Duration: {total_duration/3600:.2f} hours")
-    logging.info(f"All analysis completed. Success: {processed_time/3600:.2f} hours, "
-                 f"Failures: {failed_time/3600:.2f} hours, "
-                 f"Total Duration: {total_duration/3600:.2f} hours")
+    for window_length in window_sizes:
+        # Calculate window boundaries
+        start_time = merger_time - window_length/2
+        end_time = merger_time + window_length/2
+        
+        logging.info(f"\nProcessing window of size {window_length/3600:.2f} hours")
+        logging.info(f"Window from {start_time} to {end_time}")
+        
+        processed_time, failed_time, total_duration = fetch_and_process_strain(
+            detector, start_time, end_time, [window_length], fftlength)
+            
+        print(f"Window {window_length/3600:.2f} hours completed. Success: {processed_time/3600:.2f} hours, "
+              f"Failures: {failed_time/3600:.2f} hours, "
+              f"Total Duration: {total_duration/3600:.2f} hours")
+        logging.info(f"Window {window_length/3600:.2f} hours completed. Success: {processed_time/3600:.2f} hours, "
+                     f"Failures: {failed_time/3600:.2f} hours, "
+                     f"Total Duration: {total_duration/3600:.2f} hours")
