@@ -8,7 +8,8 @@ import glob
 from scipy.interpolate import interp1d
 import re
 import traceback  
-
+import corner
+import matplotlib.pyplot as plt 
 # Set up the output directory
 BASE_DIR = r'/home/useradd/projects/bilby/MyStuff/my_outdir/GW_Noise_H1_L1_window'
 outdir = os.path.join(BASE_DIR, 'pe_results')
@@ -200,25 +201,140 @@ for h1_file, l1_file in matched_files:
         traceback.print_exc()
         continue
 
-# Plot comparisons if we have results
-    if results:
-        print("\nGenerating comparison plots...")
-        try:
-            # Create simpler labels for the results
-            labels = []
-            for r in results:
-                window_size = re.search(r'win(\d+)', r.label).group(1)
-                labels.append(f'Window {window_size}')
-            
-            bilby.result.plot_multiple(
-                results,
-                parameters=['chirp_mass', 'mass_ratio', 'luminosity_distance'],
-                labels=labels,
-                outdir=outdir,
-                filename='comparison_plot.png'
-            )
-            print("Analysis complete!")
-        except Exception as e:
-            print(f"Error creating comparison plot: {str(e)}")
-    else:
-        print("No successful analyses to plot.")
+if results:
+    print("\nGenerating comparison and corner plots...")
+    try:
+        # Ensure output directory exists
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+        print(f"\nSaving plots to: {outdir}")
+
+        # Create labels for the plots
+        labels = []
+        for result in results:
+            window_size = re.search('win(\d+)', result.label).group(1)
+            labels.append(f'Window {window_size}')
+
+        # Parameters for corner plots
+        parameters = ['chirp_mass', 'mass_ratio', 'luminosity_distance', 
+                     'theta_jn', 'phase', 'geocent_time']
+
+        # Individual corner plots using corner package directly
+        for i, result in enumerate(results):
+            try:
+                window_size = re.search('win(\d+)', result.label).group(1)
+                corner_plot_path = os.path.join(outdir, f'corner_plot_win{window_size}.png')
+                
+                # Create figure
+                fig = plt.figure(figsize=(15, 15))
+                
+                # Prepare data
+                data = np.zeros((len(result.posterior), len(parameters)))
+                for j, param in enumerate(parameters):
+                    data[:, j] = result.posterior[param].values
+                
+                # Create corner plot
+                corner.corner(
+                    data,
+                    labels=parameters,
+                    fig=fig,
+                    color='blue',
+                    show_titles=True,
+                    title_kwargs={"fontsize": 12},
+                    plot_datapoints=True,
+                    plot_density=True,
+                    levels=(0.39, 0.86, 0.99),
+                    bins=30,
+                )
+                
+                plt.suptitle(f'Corner Plot for Window {window_size}', y=1.02, fontsize=14)
+                
+                # Save and close
+                plt.savefig(corner_plot_path, bbox_inches='tight', dpi=300)
+                plt.close(fig)
+                
+                # Verify file was created
+                if os.path.exists(corner_plot_path):
+                    print(f"Successfully saved corner plot for window {window_size}")
+                    print(f"File size: {os.path.getsize(corner_plot_path)} bytes")
+                else:
+                    print(f"Failed to save corner plot for window {window_size}")
+                    
+            except Exception as e:
+                print(f"Error creating corner plot for window {window_size}: {str(e)}")
+                traceback.print_exc()
+
+        # Combined corner plot
+        if len(results) > 1:
+            try:
+                combined_plot_path = os.path.join(outdir, 'combined_corner_plot.png')
+                
+                # Set up the figure
+                fig = plt.figure(figsize=(15, 15))
+                
+                # Plot with different colors
+                colors = ['blue', 'red', 'green', 'orange', 'purple', 'brown']
+                
+                # Add datasets
+                for i, result in enumerate(results):
+                    data = np.zeros((len(result.posterior), len(parameters)))
+                    for j, param in enumerate(parameters):
+                        data[:, j] = result.posterior[param].values
+                    
+                    if i == 0:
+                        fig = corner.corner(
+                            data,
+                            labels=parameters,
+                            fig=fig,
+                            color=colors[i],
+                            show_titles=True,
+                            title_kwargs={"fontsize": 12},
+                            plot_datapoints=True,
+                            plot_density=True,
+                            levels=(0.39, 0.86, 0.99),
+                            bins=30
+                        )
+                    else:
+                        corner.corner(
+                            data,
+                            fig=fig,
+                            color=colors[i % len(colors)],
+                            plot_datapoints=True,
+                            plot_density=True,
+                            levels=(0.39, 0.86, 0.99),
+                            bins=30
+                        )
+                
+                # Add legend
+                axes = np.array(fig.axes)
+                legend_elements = [plt.Line2D([0], [0], color=colors[i], label=label)
+                                 for i, label in enumerate(labels)]
+                axes[0].legend(handles=legend_elements, 
+                             loc='upper right',
+                             fontsize=8)
+
+                plt.savefig(combined_plot_path, bbox_inches='tight', dpi=300)
+                plt.close(fig)
+                
+                if os.path.exists(combined_plot_path):
+                    print(f"Successfully saved combined corner plot")
+                    print(f"File size: {os.path.getsize(combined_plot_path)} bytes")
+                else:
+                    print("Failed to save combined corner plot")
+                
+            except Exception as e:
+                print(f"Error creating combined corner plot: {str(e)}")
+                traceback.print_exc()
+
+        # List actual files in directory
+        print("\nActual files in output directory:")
+        for file in os.listdir(outdir):
+            if file.endswith('.png'):
+                file_path = os.path.join(outdir, file)
+                print(f"{file_path} - Size: {os.path.getsize(file_path)} bytes")
+
+    except Exception as e:
+        print(f"Error in plotting routine: {str(e)}")
+        traceback.print_exc()
+else:
+    print("No successful analyses to plot.")

@@ -227,24 +227,25 @@ def plot_single_asd_results(base_dir, asd_selector=None, outdir=None):
     print(f"Plot saved as: {outfile}")
 def plot_multiple_windows_corner(base_dir, window_selectors, outdir=None):
     """
-    Create corner plots comparing PE results from different time windows.
+    Create a clearer corner plot comparing PE results from different time windows.
     """
-    # Set matplotlib backend to 'Agg' at the start to prevent display
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
+    import corner
+    import numpy as np
     
     if outdir is None:
         outdir = os.path.join(base_dir, 'window_plots')
     os.makedirs(outdir, exist_ok=True)
     
-    # Parameters to plot
+    # Parameters to plot with better labels
     params = ['chirp_mass', 'mass_ratio', 'luminosity_distance', 'theta_jn']
     labels = {
-        'chirp_mass': '$\\mathcal{M}$ $(M_\\odot)$',
-        'mass_ratio': '$q$',
-        'luminosity_distance': '$d_L$ (Mpc)',
-        'theta_jn': '$\\theta_{JN}$ (rad)'
+        'chirp_mass': 'Chirp Mass $\\mathcal{M}$ $(M_\\odot)$',
+        'mass_ratio': 'Mass Ratio $q$',
+        'luminosity_distance': 'Luminosity Distance $d_L$ (Mpc)',
+        'theta_jn': 'Inclination $\\theta_{JN}$ (rad)'
     }
     
     # Load results
@@ -253,40 +254,119 @@ def plot_multiple_windows_corner(base_dir, window_selectors, outdir=None):
         selected_file = None
         pattern = f'bbh_comparison_win{window}_result.json'
         potential_files = glob(os.path.join(base_dir, pattern))
-        print(f"Looking for {pattern}")
-        print(f"Found files: {potential_files}")
         
         if potential_files:
-            selected_file = potential_files[0]
             try:
-                result = bilby.result.read_in_result(selected_file)
+                result = bilby.result.read_in_result(potential_files[0])
                 window_hours = window/3600
                 results[window_hours] = result
-                print(f"Loaded results for {window_hours:.2f} hour window")
             except Exception as e:
-                print(f"Error reading {selected_file}: {e}")
+                print(f"Error reading file: {e}")
     
     if not results:
         print("No results loaded")
         return
+        
+    # Create figure with larger size
+    fig = plt.figure(figsize=(20, 20))
     
-    # Create corner plot with display disabled
-    plt.ioff()  # Turn off interactive mode
-    fig = plt.figure(figsize=(15, 15))
+    # Prepare data
+    samples_dict = {}
+    for window_hours, result in results.items():
+        samples = []
+        for param in params:
+            samples.append(result.posterior[param].values)
+        samples_dict[f'{window_hours:.1f}h'] = np.array(samples).T
     
-    # Plot using bilby's corner plot function
-    bilby.result.plot_multiple(
-        [result for result in results.values()],
-        parameters=params,
-        labels=[f'{hours:.1f}h window' for hours in results.keys()],
-        outdir=outdir,
-        filename='window_comparison_corner.png',
-        save=True,
-        close=True
+    # Use a better color scheme with alpha for transparency
+    colors = ['#1f77b4', '#d62728', '#2ca02c', '#ff7f0e']  # More distinct colors
+    
+    # Plot settings for better readability
+    corner_kwargs = dict(
+        show_titles=True,
+        title_kwargs={"fontsize": 14, "pad": 10},
+        plot_datapoints=False,
+        plot_density=True,
+        fill_contours=True,
+        levels=(0.39, 0.86),
+        bins=50,
+        smooth=1.0,
+        label_kwargs={"fontsize": 14},
+        hist_kwargs={
+            "density": True,
+            "linewidth": 2,
+            "alpha": 0.6  # Add transparency
+        },
+        contour_kwargs={
+            "linewidths": 2,
+            "alpha": 0.8  # Add transparency
+        },
     )
     
-    plt.close(fig)  # Explicitly close the figure
-    print(f"Corner plot saved to {outdir}/window_comparison_corner.png")
+    # Create base corner plot without data first
+    figure = corner.corner(
+        samples_dict[list(samples_dict.keys())[0]],
+        labels=[labels[param] for param in params],
+        fig=fig,
+        **corner_kwargs,
+    )
+    
+    # Get the axes
+    axes = np.array(figure.axes).reshape((len(params), len(params)))
+    
+    # Plot each dataset
+    for idx, (label, samples) in enumerate(samples_dict.items()):
+        color = colors[idx % len(colors)]
+        
+        # Plot diagonal (histograms)
+        for i in range(len(params)):
+            ax = axes[i, i]
+            # Plot histograms with transparency
+            ax.hist(samples[:, i], bins=50, density=True, color=color, 
+                   alpha=0.6, histtype='step', linewidth=2,
+                   label=f"Window: {label}")
+        
+        # Plot contours
+        for i in range(len(params)):
+            for j in range(i):
+                ax = axes[i, j]
+                corner.hist2d(samples[:, j], samples[:, i], 
+                            ax=ax, color=color, 
+                            contour_kwargs={'alpha': 0.8},
+                            plot_datapoints=False,
+                            levels=(0.39, 0.86),
+                            fill_contours=True,
+                            smooth=1.0)
+    
+    # Add legend to the top-left plot
+    axes[0, 0].legend(fontsize=12, frameon=True, 
+                     facecolor='white', edgecolor='black',
+                     bbox_to_anchor=(0.95, 0.95))
+    
+    # Add true values if available
+    if 'injection_parameters' in results[list(results.keys())[0]].__dict__:
+        true_params = results[list(results.keys())[0]].injection_parameters
+        for i, param in enumerate(params):
+            if param in true_params:
+                true_val = true_params[param]
+                for ax in figure.axes:
+                    if ax.get_xlabel() == labels[param]:
+                        ax.axvline(true_val, color='black', linestyle='--', 
+                                 linewidth=2, label='True Value')
+                    if ax.get_ylabel() == labels[param]:
+                        ax.axhline(true_val, color='black', linestyle='--', 
+                                 linewidth=2)
+    
+    # Add overall title
+    plt.suptitle('Parameter Estimation Results Comparison Across Time Windows',
+                y=1.02, fontsize=16, fontweight='bold')
+    
+    # Save with high DPI
+    outfile = os.path.join(outdir, 'window_comparison_corner.png')
+    plt.savefig(outfile, bbox_inches='tight', dpi=300, facecolor='white')
+    plt.close()
+    
+    print(f"Enhanced corner plot saved to {outfile}")
 
 def plot_multiple_windows_separate(base_dir, window_selectors, outdir=None):
     """
