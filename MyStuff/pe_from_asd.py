@@ -10,9 +10,11 @@ import re
 import traceback  
 import corner
 import matplotlib.pyplot as plt 
+import time  
+
 # Set up the output directory
 BASE_DIR = r'/home/useradd/projects/bilby/MyStuff/my_outdir/GW_Noise_H1_L1_window'
-outdir = os.path.join(BASE_DIR, 'pe_results')
+outdir = os.path.join(BASE_DIR, 'pe_results_time')
 label = 'bbh_comparison'
 if not os.path.exists(outdir):
     os.makedirs(outdir)
@@ -77,6 +79,7 @@ dynesty_settings = {
 }
 
 results = []
+runtime_data = []  # Store runtime information
 
 for h1_file, l1_file in matched_files:
     print(f"\nProcessing window pair:")
@@ -84,6 +87,9 @@ for h1_file, l1_file in matched_files:
     print(f"L1: {os.path.basename(l1_file)}")
     
     try:
+        # Start timing
+        start_time_pe = time.time()
+        
         # Load both ASDs
         with open(h1_file, 'rb') as f:
             h1_data = pickle.load(f)
@@ -193,13 +199,55 @@ for h1_file, l1_file in matched_files:
             **dynesty_settings
         )
 
-        results.append(result)
+        # End timing and calculate runtime
+        end_time_pe = time.time()
+        runtime_hours = (end_time_pe - start_time_pe) / 3600  # Convert seconds to hours
+        
+        # Store runtime information
+        runtime_data.append({
+            'window_size': window_size,
+            'runtime_hours': runtime_hours,
+            'n_samples': len(result.posterior),
+            'n_effective': result.meta_data.get('effective_sample_size', 'N/A')
+        })
+        
         print(f"Completed analysis for window size {window_size}")
+        print(f"Runtime: {runtime_hours:.2f} hours")
+        
+        results.append(result)
 
     except Exception as e:
         print(f"Error processing window {window_size}: {str(e)}")
         traceback.print_exc()
         continue
+
+# Save runtime data to file
+if runtime_data:
+    runtime_file = os.path.join(outdir, 'runtime_data.txt')
+    with open(runtime_file, 'w') as f:
+        f.write("Window Size | Runtime (hours) | Samples | Effective Sample Size\n")
+        f.write("-" * 60 + "\n")
+        for data in runtime_data:
+            f.write(f"{data['window_size']} | {data['runtime_hours']:.2f} | {data['n_samples']} | {data['n_effective']}\n")
+        
+        # Calculate average runtime
+        avg_runtime = sum(data['runtime_hours'] for data in runtime_data) / len(runtime_data)
+        avg_samples = sum(data['n_samples'] for data in runtime_data) / len(runtime_data)
+        f.write("\n\nAverage runtime: {:.2f} hours\n".format(avg_runtime))
+        f.write("Average samples: {:.0f}\n".format(avg_samples))
+        
+        # Count actual free parameters
+        free_params = 0
+        for param, prior in priors.items():
+            if not isinstance(prior, (float, int)):  # If it's not a fixed value
+                free_params += 1
+        f.write(f"\nNumber of free parameters: 6\n")
+        f.write(f"Free parameters: chirp_mass, mass_ratio, luminosity_distance, theta_jn, phase, geocent_time\n")
+    
+    print(f"\nRuntime data saved to {runtime_file}")
+    print(f"\nAverage runtime: {avg_runtime:.2f} hours for 6 free parameters")
+    print(f"  (chirp_mass, mass_ratio, luminosity_distance, theta_jn, phase, geocent_time)")
+    print(f"Average samples per run: {avg_samples:.0f}")
 
 if results:
     print("\nGenerating comparison and corner plots...")
