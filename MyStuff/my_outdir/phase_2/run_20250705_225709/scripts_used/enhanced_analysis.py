@@ -8,7 +8,7 @@ import bilby
 import os
 import json
 import pandas as pd
- 
+
 def analyze_refinement_results(results_dir):
     """Analyze refinement results and print key metrics."""
     
@@ -31,7 +31,7 @@ def analyze_refinement_results(results_dir):
     if os.path.exists(summary_path):
         with open(summary_path, 'r') as f:
             summary = json.load(f)
-           injection_parameters  = summary.get('injection_parameters', {})
+            injection_parameters = summary.get('injection_parameters', {})
     
     # Load bilby results
     for label, filename in result_files.items():
