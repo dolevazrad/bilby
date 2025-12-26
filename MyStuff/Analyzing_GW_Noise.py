@@ -104,30 +104,30 @@ def interpolate_asd(source_freqs, source_asd, target_freqs):
     interpolator = interp1d(source_freqs, source_asd, kind='linear', bounds_error=False, fill_value='extrapolate')
     return interpolator(target_freqs)
     
-# Define output directory
-PARENT_LABEL = "GW_Noise_H1_L1"
-user = os.environ.get('USER', 'default_user')
-if user == 'useradd':
-    BASE_OUTDIR = f'/home/{user}/projects/bilby/MyStuff/my_outdir/{PARENT_LABEL}'
-elif user == 'dolev':
-    BASE_OUTDIR = f'/home/{user}/code/bilby/MyStuff/my_outdir/{PARENT_LABEL}'
-if not os.path.exists(BASE_OUTDIR):
-    os.makedirs(BASE_OUTDIR)
-# Setup logging
+# # Define output directory
+# PARENT_LABEL = "GW_Noise_H1_L1"
+# user = os.environ.get('USER', 'default_user')
+# if user == 'useradd':
+#     BASE_OUTDIR = f'/home/{user}/projects/bilby/MyStuff/my_outdir/{PARENT_LABEL}'
+# elif user == 'dolev':
+#     BASE_OUTDIR = f'/home/{user}/code/bilby/MyStuff/my_outdir/{PARENT_LABEL}'
+# if not os.path.exists(BASE_OUTDIR):
+#     os.makedirs(BASE_OUTDIR)
+# # Setup logging
 
-today = date.today().strftime("%Y-%m-%d")
-log_filename = f'process_log_{today}.log'
+# today = date.today().strftime("%Y-%m-%d")
+# log_filename = f'process_log_{today}.log'
 
-logging.basicConfig(filename=os.path.join(BASE_OUTDIR, log_filename), level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+# logging.basicConfig(filename=os.path.join(BASE_OUTDIR, log_filename), level=logging.INFO,
+#                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-print(f"Data will be saved in: {BASE_OUTDIR}")
-#  time increments for loading data: 30 minutes, 1 hour, 48 hours, and 96 days
+# print(f"Data will be saved in: {BASE_OUTDIR}")
+# #  time increments for loading data: 30 minutes, 1 hour, 48 hours, and 96 days
 
-# Create output directory if it does not exist
-if not os.path.exists(BASE_OUTDIR):
-    os.makedirs(BASE_OUTDIR)
-# Fetch GPS time for the event
+# # Create output directory if it does not exist
+# if not os.path.exists(BASE_OUTDIR):
+#     os.makedirs(BASE_OUTDIR)
+# # Fetch GPS time for the event
 
 def load_latest_psd(base_dir, detector):
     psd_files = glob.glob(os.path.join(base_dir, f"{detector}_psd_*.pkl"))
@@ -271,15 +271,29 @@ def check_for_nans(data, data_type):
 
 
 def combine_asds(cumulative_asd, segment_asd, asd_count):
-    # Determine the frequency range to use
+    """
+    Combine ASDs using running average. 
+    Optimized to skip interpolation if frequency axes match.
+    """
+    
+    # OPTIMIZATION: Direct numpy calculation if grids match
+    if (len(cumulative_asd.frequencies) == len(segment_asd.frequencies) and 
+        np.isclose(cumulative_asd.df.value, segment_asd.df.value) and 
+        np.isclose(cumulative_asd.f0.value, segment_asd.f0.value)):
+        
+        # Math: sqrt( (Old_Sigma^2 * N + New_Sigma^2) / (N + 1) )
+        combined_value = np.sqrt(
+            (cumulative_asd.value**2 * asd_count + segment_asd.value**2) / (asd_count + 1)
+        )
+        return FrequencySeries(combined_value, frequencies=cumulative_asd.frequencies, unit=cumulative_asd.unit)
+
+    # Fallback to interpolation only if grids differ
     min_freq = max(cumulative_asd.f0.value, segment_asd.f0.value)
     max_freq = min(cumulative_asd.f0.value + cumulative_asd.df.value * len(cumulative_asd),
                    segment_asd.f0.value + segment_asd.df.value * len(segment_asd))
 
-    # Create a new frequency array
     new_freq = np.linspace(min_freq, max_freq, int((max_freq - min_freq) / min(cumulative_asd.df.value, segment_asd.df.value)))
 
-    # Interpolate both ASDs to the new frequency array
     cumul_interp = interp1d(cumulative_asd.frequencies.value, cumulative_asd.value, 
                             bounds_error=False, fill_value='extrapolate')
     seg_interp = interp1d(segment_asd.frequencies.value, segment_asd.value, 
@@ -288,11 +302,10 @@ def combine_asds(cumulative_asd, segment_asd, asd_count):
     cumul_values = cumul_interp(new_freq)
     seg_values = seg_interp(new_freq)
 
-    # Combine the interpolated values
     combined_value = np.sqrt((cumul_values**2 * asd_count + seg_values**2) / (asd_count + 1))
 
     return FrequencySeries(combined_value, frequencies=new_freq, unit=cumulative_asd.unit)
-
+    
 def process_segment(segment, next_increment_index, cumulative_asd, asd_count, processed_time, failed_time, start_time, detector, increments, is_last_segment=False):
     psd_fftlength = segment.duration.value  # Use full segment duration for PSD calculation
 

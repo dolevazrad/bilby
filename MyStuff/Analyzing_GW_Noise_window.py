@@ -19,8 +19,17 @@ from scipy.interpolate import interp1d
 from gwpy.detector import Channel
 from gwpy.frequencyseries import FrequencySeries
 from Analyzing_GW_Noise import check_and_clear_space, find_data_gaps, save_asd_and_plot, combine_asds
+import socket
+import urllib3.util.connection as urllib3_cn
+
+# FORCE IPv4: Fixes "stuck" fetches on WSL/Linux
+def allowed_gai_family():
+    return socket.AF_INET
+
+urllib3_cn.allowed_gai_family = allowed_gai_family
+
 # Define output directory
-PARENT_LABEL = "GW_Noise_H1_L1_window"
+PARENT_LABEL = "GW_Noise_H1_L1_window_201225"
 user = os.environ.get('USER', 'default_user')
 if user == 'useradd':
     BASE_OUTDIR = f'/home/{user}/projects/bilby/MyStuff/my_outdir/{PARENT_LABEL}'
@@ -28,6 +37,10 @@ elif user == 'dolev':
     BASE_OUTDIR = f'/home/{user}/code/bilby/MyStuff/my_outdir/{PARENT_LABEL}'
 if not os.path.exists(BASE_OUTDIR):
     os.makedirs(BASE_OUTDIR)
+
+    
+print(f"Data will be saved in: {BASE_OUTDIR}")
+
 def save_asd_and_plot_window(cumulative_asd, win_length, detector, total_processed_duration, 
                       event_time, asd_count):
     """
@@ -157,84 +170,76 @@ def process_segment_window(segment, cumulative_asd, asd_count, processed_time, f
         failed_time += segment.duration.value
 
     return cumulative_asd, asd_count, processed_time, failed_time
+import socket
+import gc
+
 def fetch_and_process_strain_window(detector, event_time, win_length, fftlength, overlap):
-    """Process strain data for a time window centered around an event."""
+    """
+    Process strain data for a time window centered around an event.
+    Optimized for long-duration (100-day) runs on WSL.
+    """
     start_time = event_time - win_length/2
     end_time = event_time + win_length/2
     
-    if not check_and_clear_space():
-        logging.error("Insufficient disk space. Aborting.")
-        return 0, 0, 0
-
-    # Initialize variables
     cumulative_asd = None
     asd_count = 0
     current_time = start_time
     processed_time = 0
     failed_time = 0
-    consecutive_errors = 0
-    max_consecutive_errors = 500000
+    
+    socket.setdefaulttimeout(30)
+    FETCH_CHUNK_SIZE = 4096 
 
     while current_time < end_time:
-        if not check_and_clear_space():
-            logging.error("Ran out of disk space during processing. Aborting.")
-            break
+        this_chunk_size = min(FETCH_CHUNK_SIZE, end_time - current_time)
+        interval_end = current_time + this_chunk_size
+        
+        logging.info(f"Fetching {detector}: {current_time} to {interval_end}")
+
+        strain = None
+        max_retries = 5
+        
+        for attempt in range(max_retries):
+            try:
+                strain = TimeSeries.fetch_open_data(
+                    detector, current_time, interval_end, cache=False, verbose=True 
+                )
+                break # Success
+            except ValueError as e:
+                # CRITICAL UPDATE: If GWOSC says "Cannot find dataset", stop retrying!
+                if "Cannot find" in str(e):
+                    logging.warning(f"No data exists for {current_time}-{interval_end}. Skipping immediately.")
+                    break 
+                else:
+                    logging.warning(f"ValueError (Retrying): {e}")
+                    time.sleep(2)
+            except Exception as e:
+                logging.warning(f"Network error attempt {attempt+1}: {e}")
+                time.sleep(5 * (attempt + 1))
+
+        if strain is None or strain.duration.value <= 0:
+            failed_time += this_chunk_size
+            current_time += this_chunk_size
+            continue
 
         try:
-            # Always move forward by at least 1 second
-            chunk_size = max(min(fftlength, end_time - current_time), 1.0)
-            interval_end = current_time + chunk_size
-            
-            logging.info(f"Fetching data from {current_time} to {interval_end}, chunk size: {chunk_size}")
-            strain = TimeSeries.fetch_open_data(detector, current_time, interval_end, 
-                                              cache=True, verbose=True)
-            
-            if strain is None or strain.duration.value <= 0:
-                logging.info(f"No data available from {current_time} to {interval_end}")
-                failed_time += chunk_size
-                current_time += chunk_size
-                continue
-
-            # Process the strain data
-            gaps = find_data_gaps(strain)
-            if gaps:
-                for start, end, duration, gap_type in gaps:
-                    logging.info(f"{gap_type.capitalize()} from {start} to {end}, duration: {duration}s")
-                    failed_time += duration
-
-            # Process the valid data segment
-            cumulative_asd, asd_count, processed_time, failed_time = process_segment_window(
+             cumulative_asd, asd_count, processed_time, failed_time = process_segment_window(
                 strain, cumulative_asd, asd_count, processed_time, failed_time,
                 event_time, detector, win_length, fftlength, overlap
             )
-            
-            # Move forward by the actual data duration or at least 1 second
-            time_advance = max(strain.duration.value, 1.0)
-            current_time += time_advance
-            
-            logging.info(f'Progress - Current time: {current_time}, End time: {end_time}')
-            logging.info(f'Processed: {processed_time:.2f}s, Failed: {failed_time:.2f}s')
-
         except Exception as e:
-            logging.error(f"Error processing data from {current_time} to {interval_end}: {str(e)}")
-            # Ensure we move forward even on error
-            current_time += max(chunk_size, 1.0)
-            failed_time += chunk_size
-            
-            consecutive_errors += 1
-            if consecutive_errors >= max_consecutive_errors:
-                logging.error(f"Too many consecutive errors ({max_consecutive_errors}). continue.")
-                
+            logging.error(f"Processing error: {e}")
+            failed_time += this_chunk_size
+
+        current_time += this_chunk_size
+        del strain
         
-        # Save intermediate results periodically
         if asd_count > 0 and asd_count % 10 == 0:
-            save_asd_and_plot_window(cumulative_asd, win_length, detector, processed_time, 
-                                   event_time, asd_count)
-    
-    # Save final results
+            save_asd_and_plot_window(cumulative_asd, win_length, detector, processed_time, event_time, asd_count)
+            gc.collect()
+
     if cumulative_asd is not None:
-        save_asd_and_plot_window(cumulative_asd, win_length, detector, processed_time, 
-                                event_time, asd_count)
+        save_asd_and_plot_window(cumulative_asd, win_length, detector, processed_time, event_time, asd_count)
     
     return processed_time, failed_time, processed_time + failed_time
     
@@ -248,7 +253,10 @@ if __name__ == "__main__":
         86400,    # 1 day
         604800,   # 1 week
         2592000,  # 30 days
-        5184000   # 60 days
+        5184000,  # 60 days
+        6912000,  #80 days
+        8640000   #100 days
+
     ]
 
     # Other parameters
