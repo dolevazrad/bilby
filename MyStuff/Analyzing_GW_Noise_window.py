@@ -254,8 +254,8 @@ if __name__ == "__main__":
         604800,   # 1 week
         2592000,  # 30 days
         5184000,  # 60 days
-        6912000,  #80 days
-        8640000   #100 days
+        6912000   # 80 days
+        #8640000   #100 days
 
     ]
 
@@ -263,7 +263,8 @@ if __name__ == "__main__":
     fftlength = 600
     overlap = 300
     detectors = ['H1', 'L1']
-    
+    detectors = ['L1']
+
     # Set up logging
     logging.basicConfig(
         level=logging.INFO, 
