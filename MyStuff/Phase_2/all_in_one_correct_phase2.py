@@ -25,48 +25,51 @@ from datetime import datetime
 ASD_DIR = '/home/useradd/projects/bilby/MyStuff/my_outdir/GW_Noise_H1_L1_window_201225'
 OUTPUT_BASE = '/home/useradd/projects/bilby/MyStuff/my_outdir/phase_2'
 
-def find_asd_pairs():
-    """Find appropriate half-time and full-time ASD pairs."""
+def find_asd_scenarios():
+    """Find Max (<= Day 80), Half (50%), and Quarter (25%) ASD files."""
     print("Looking for ASD files...")
     
     h1_files = glob.glob(os.path.join(ASD_DIR, 'H1_asd_win*.pkl'))
+    valid_windows = {}
     
-    asd_pairs = {}
+    # 1. Filter out Day 100+ and parse windows
+    MAX_VALID_SECONDS = 80 * 24 * 3600  # Day 80
+    
     for h1_file in h1_files:
         match = re.search(r'win(\d+)', h1_file)
         if match:
             window = int(match.group(1))
-            l1_file = h1_file.replace('H1_asd', 'L1_asd')
-            if os.path.exists(l1_file):
-                asd_pairs[window] = {
-                    'H1': h1_file,
-                    'L1': l1_file,
-                    'hours': window / 3600
-                }
-    
-    # Find best half/full pair (prefer 12h/24h)
-    windows = sorted(asd_pairs.keys())
-    half_time = None
-    full_time = None
-    
-    # Look for ideal pairs
-    ideal_pairs = [(43200, 86400), (21600, 43200), (3600, 7200)]  # (12h,24h), (6h,12h), (1h,2h)
-    
-    for half_w, full_w in ideal_pairs:
-        if half_w in windows and full_w in windows:
-            half_time = asd_pairs[half_w]
-            full_time = asd_pairs[full_w]
-            print(f"✓ Found ideal pair: {half_time['hours']}h and {full_time['hours']}h")
-            break
-    
-    if not half_time and len(windows) >= 2:
-        # Use smallest and largest
-        half_time = asd_pairs[windows[0]]
-        full_time = asd_pairs[windows[-1]]
-        print(f"Using: {half_time['hours']}h and {full_time['hours']}h")
-    
-    return half_time, full_time
+            if window <= MAX_VALID_SECONDS:
+                l1_file = h1_file.replace('H1_asd', 'L1_asd')
+                if os.path.exists(l1_file):
+                    valid_windows[window] = {'H1': h1_file, 'L1': l1_file, 'hours': window/3600}
 
+    if not valid_windows:
+        print("✗ No valid ASD files found!")
+        return None, None, None
+
+    # 2. Find the "Gold Standard" (Max Time)
+    sorted_windows = sorted(valid_windows.keys())
+    max_w = sorted_windows[-1]
+    full_time = valid_windows[max_w]
+    print(f"✓ Gold Standard (Max): {full_time['hours']:.1f} hours")
+
+    # 3. Find closest matches for 1/2 and 1/4
+    target_half = max_w / 2
+    target_quarter = max_w / 4
+    
+    # Helper to find closest existing window
+    def get_closest(target):
+        closest_w = min(sorted_windows, key=lambda x: abs(x - target))
+        return valid_windows[closest_w]
+
+    half_time = get_closest(target_half)
+    quarter_time = get_closest(target_quarter)
+
+    print(f"✓ Half-Time Scout:     {half_time['hours']:.1f} hours (Target: {target_half/3600:.1f})")
+    print(f"✓ Quarter-Time Scout:  {quarter_time['hours']:.1f} hours (Target: {target_quarter/3600:.1f})")
+
+    return full_time, half_time, quarter_time
 def create_injection_parameters():
     """Create test injection parameters."""
     return {
@@ -169,7 +172,7 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         
         # --- OPTIMIZATION START ---
         # Check if this is the "Half Time" run (The Scout)
-        if 'half' in label.lower():
+        if 'scout' in label.lower():
             print("--- OPTIMIZING FOR SPEED (Phase 1: Scout) ---")
             # Lower settings for rough estimation
             sampler_settings = {'npoints': 250, 'walks': 10} 
@@ -219,8 +222,19 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
     return result, runtime
 
 def create_informed_priors(posterior_result):
-    """Create informed priors from posterior."""
+    """Create informed priors from posterior AND VERIFY THEM."""
+    print("\n" + "*"*50)
+    print("VERIFYING INFORMED PRIORS")
+    print("*"*50)
+    
     informed_priors = PriorDict()
+    
+    # Define the original wide ranges (just for comparison)
+    original_ranges = {
+        'chirp_mass': 10.0,      # 35 - 25
+        'mass_ratio': 0.5,       # 1.0 - 0.5
+        'luminosity_distance': 600 # 800 - 200
+    }
     
     params = ['chirp_mass', 'mass_ratio', 'luminosity_distance', 
               'theta_jn', 'phase', 'geocent_time']
@@ -228,25 +242,39 @@ def create_informed_priors(posterior_result):
     for param in params:
         if param in posterior_result.posterior:
             samples = posterior_result.posterior[param].values
-            lower, median, upper = np.percentile(samples, [5, 50, 95])
-            width = (upper - lower) * 1.5 / 2
             
+            # 1. Calculate the new range
+            lower, median, upper = np.percentile(samples, [5, 50, 95])
+            width = (upper - lower) * 1.5 / 2  # The buffer logic
+            
+            new_min = median - width
+            new_max = median + width
+            new_range = new_max - new_min
+
+            # 2. Add to informed priors
             if param == 'theta_jn':
-                informed_priors[param] = Sine(
-                    minimum=max(0, median - width),
-                    maximum=min(np.pi, median + width)
-                )
+                informed_priors[param] = Sine(minimum=max(0, new_min), maximum=min(np.pi, new_max))
             elif param == 'phase':
-                informed_priors[param] = Uniform(
-                    minimum=max(0, median - width),
-                    maximum=min(2*np.pi, median + width)
-                )
+                informed_priors[param] = Uniform(minimum=max(0, new_min), maximum=min(2*np.pi, new_max))
             else:
-                informed_priors[param] = Uniform(
-                    minimum=median - width,
-                    maximum=median + width
-                )
-    
+                informed_priors[param] = Uniform(minimum=new_min, maximum=new_max)
+
+            # 3. PRINT THE COMPARISON (The Proof)
+            if param in original_ranges:
+                orig = original_ranges[param]
+                improvement = (orig - new_range) / orig * 100
+                print(f"PARAM: {param}")
+                print(f"  Old Width: {orig:.2f}")
+                print(f"  New Width: {new_range:.2f}")
+                
+                if improvement > 0:
+                    print(f"  >>> SUCCESS: Range is {improvement:.1f}% tighter!")
+                else:
+                    print(f"  >>> WARNING: Range did not improve.")
+            else:
+                print(f"PARAM: {param} -> New range: {new_min:.2f} to {new_max:.2f}")
+
+    print("*"*50 + "\n")
     return informed_priors
 
 def analyze_results(outdir, times):
@@ -321,51 +349,84 @@ def analyze_results(outdir, times):
         json.dump(summary, f, indent=4)
 
 def main():
-    """Run the complete correct workflow."""
     print("="*70)
-    print("PHASE 2 CORRECT IMPLEMENTATION")
+    print("PHASE 2: SENSITIVITY TEST (1/2 vs 1/4 Start)")
     print("="*70)
     
-    # Find ASD files
-    half_time_files, full_time_files = find_asd_pairs()
+    # 1. Find our three key files
+    full_files, half_files, quarter_files = find_asd_scenarios()
     
-    if not half_time_files or not full_time_files:
-        print("\n✗ Could not find appropriate ASD pairs!")
+    if not full_files:
         return
-    
+
     # Create output directory
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    outdir = os.path.join(OUTPUT_BASE, f'correct_run_{timestamp}')
+    outdir = os.path.join(OUTPUT_BASE, f'sensitivity_test_{timestamp}')
     os.makedirs(outdir, exist_ok=True)
     
-    print(f"\nOutput directory: {outdir}")
-    
     times = {}
-    
-    # Step 1: Full-time PE (baseline)
+
+    # -------------------------------------------------------
+    # STEP 0: The Baseline (The Truth)
+    # -------------------------------------------------------
     print("\n" + "="*50)
-    print("STEP 1: Full-time PE (baseline)")
+    print(f"BASELINE: Running Full Time ({full_files['hours']:.1f}h) from scratch")
     print("="*50)
-    full_result, times['full'] = run_pe(full_time_files, 'full_time_PE', outdir)
-    
-    # Step 2: Half-time PE
+    # Note: We pass None for informed_priors here
+    baseline_result, times['baseline'] = run_pe(full_files, 'baseline_full', outdir)
+
+
+    # -------------------------------------------------------
+    # EXPERIMENT A: The "Half-Time" Approach
+    # -------------------------------------------------------
     print("\n" + "="*50)
-    print("STEP 2: Half-time PE")
+    print(f"EXP A: Starting with Half Time ({half_files['hours']:.1f}h)")
     print("="*50)
-    half_result, times['half'] = run_pe(half_time_files, 'half_time_PE', outdir)
     
-    # Step 3: Phase 2 PE with informed priors
+    # A1. Run Scout (Fast & Rough)
+    half_result, times['half_scout'] = run_pe(half_files, 'expA_half_scout', outdir)
+    
+    # A2. Refine on Full Data
+    priors_A = create_informed_priors(half_result)
+    print("\n>>> Refinement A: Using Half-Time priors on Full Data...")
+    res_A, times['refine_A'] = run_pe(full_files, 'expA_refined', outdir, priors_A)
+
+
+    # -------------------------------------------------------
+    # EXPERIMENT B: The "Quarter-Time" Approach
+    # -------------------------------------------------------
     print("\n" + "="*50)
-    print("STEP 3: Phase 2 PE (refined)")
+    print(f"EXP B: Starting with Quarter Time ({quarter_files['hours']:.1f}h)")
     print("="*50)
-    informed_priors = create_informed_priors(half_result)
-    phase2_result, times['phase2'] = run_pe(full_time_files, 'phase2_PE', outdir, 
-                                           informed_priors)
     
-    # Analyze results
-    analyze_results(outdir, times)
+    # B1. Run Scout (Fast & Rough)
+    # Note: The 'scout' label triggers the optimization in run_pe
+    quarter_result, times['quarter_scout'] = run_pe(quarter_files, 'expB_quarter_scout', outdir)
     
-    print(f"\n✓ Complete! Results saved to: {outdir}")
+    # B2. Refine on Full Data
+    priors_B = create_informed_priors(quarter_result)
+    print("\n>>> Refinement B: Using Quarter-Time priors on Full Data...")
+    res_B, times['refine_B'] = run_pe(full_files, 'expB_refined', outdir, priors_B)
+
+    # -------------------------------------------------------
+    # SUMMARY
+    # -------------------------------------------------------
+    print("\n" + "="*70)
+    print("FINAL RESULTS")
+    print("="*70)
+    
+    # Calculate totals
+    total_A = times['half_scout'] + times['refine_A']
+    total_B = times['quarter_scout'] + times['refine_B']
+    baseline = times['baseline']
+
+    print(f"Baseline Time: {baseline/3600:.2f}h")
+    print(f"Exp A (1/2 Start): {total_A/3600:.2f}h (Savings: {(baseline-total_A)/baseline*100:.1f}%)")
+    print(f"Exp B (1/4 Start): {total_B/3600:.2f}h (Savings: {(baseline-total_B)/baseline*100:.1f}%)")
+    
+    # Save times to file
+    with open(os.path.join(outdir, 'final_timing.json'), 'w') as f:
+        json.dump(times, f, indent=4)
 
 if __name__ == "__main__":
     main()
