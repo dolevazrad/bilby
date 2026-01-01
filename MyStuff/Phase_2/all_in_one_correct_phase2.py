@@ -22,7 +22,7 @@ from gwpy.frequencyseries import FrequencySeries
 from datetime import datetime
 
 # Configuration
-ASD_DIR = '/home/useradd/projects/bilby/MyStuff/my_outdir/GW_Noise_H1_L1_window'
+ASD_DIR = '/home/useradd/projects/bilby/MyStuff/my_outdir/GW_Noise_H1_L1_window_201225'
 OUTPUT_BASE = '/home/useradd/projects/bilby/MyStuff/my_outdir/phase_2'
 
 def find_asd_pairs():
@@ -166,11 +166,25 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
             injection_params['geocent_time'] - 0.1,
             injection_params['geocent_time'] + 0.1
         )
-        sampler_settings = {'npoints': 500, 'walks': 25}
+        
+        # --- OPTIMIZATION START ---
+        # Check if this is the "Half Time" run (The Scout)
+        if 'half' in label.lower():
+            print("--- OPTIMIZING FOR SPEED (Phase 1: Scout) ---")
+            # Lower settings for rough estimation
+            sampler_settings = {'npoints': 250, 'walks': 10} 
+            dlogz_val = 0.5  # Stop sooner (0.5 is rougher than 0.1)
+        else:
+            # Baseline: High Precision
+            sampler_settings = {'npoints': 500, 'walks': 25}
+            dlogz_val = 0.1
+        # --- OPTIMIZATION END ---
+
     else:
-        # Use informed priors
+        # Phase 2: Refined (The Sniper)
         priors = informed_priors
         sampler_settings = {'npoints': 300, 'walks': 15}
+        dlogz_val = 0.1  # We want high precision here too
     
     # Fix other parameters
     for key in ['a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'ra', 'dec', 'psi']:
@@ -193,7 +207,7 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         label=label,
         injection_parameters=injection_params,
         save=True,
-        dlogz=0.1,
+        dlogz=dlogz_val,
         sample='rwalk',
         bound='multi',
         **sampler_settings

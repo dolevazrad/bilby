@@ -23,3 +23,5 @@ outdir/*
 *.npy
 *.pkl
 !MyStuff/my_outdir/GW_Noise_H1_L1_window/
+MyStuff/my_outdir/GW_Noise_H1_L1_window_201225/drive-download-20251230T234806Z-3-001.zip
+*.Identifier
