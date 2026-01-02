@@ -153,8 +153,9 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
             frequency_domain_strain=np.zeros(n_freq, dtype=complex)
         )
         
-        # Inject signal
-        ifo.inject_signal(parameters=injection_params, waveform_generator=waveform_generator)    
+        # Inject signal (Explicit arguments fixed here)
+        ifo.inject_signal(parameters=injection_params, waveform_generator=waveform_generator)
+    
     # Set up priors
     if informed_priors is None:
         # Standard uniform priors
@@ -173,20 +174,26 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         # Check if this is the "Half Time" run (The Scout)
         if 'scout' in label.lower():
             print("--- OPTIMIZING FOR SPEED (Phase 1: Scout) ---")
-            # Lower settings for rough estimation
+            # Phase 1: FAST and ROUGH (The Scout)
+            # npoints=250 is enough to find the "general area"
             sampler_settings = {'npoints': 250, 'walks': 10} 
-            dlogz_val = 0.5  # Stop sooner (0.5 is rougher than 0.1)
+            dlogz_val = 0.5 
         else:
-            # Baseline: High Precision
-            sampler_settings = {'npoints': 500, 'walks': 25}
+            # Baseline: High Precision (The "Control Group")
+            # npoints=1000 is standard for publication-quality runs
+            print("--- RUNNING HIGH PRECISION BASELINE ---")
+            sampler_settings = {'npoints': 1000, 'walks': 50}
             dlogz_val = 0.1
         # --- OPTIMIZATION END ---
 
     else:
         # Phase 2: Refined (The Sniper)
+        # We use fewer points than baseline (500) because we have informed priors,
+        # proving we can get the same result with less work.
+        print("--- RUNNING REFINED PRECISION ---")
         priors = informed_priors
-        sampler_settings = {'npoints': 300, 'walks': 15}
-        dlogz_val = 0.1  # We want high precision here too
+        sampler_settings = {'npoints': 500, 'walks': 20}
+        dlogz_val = 0.1 
     
     # Fix other parameters
     for key in ['a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'ra', 'dec', 'psi']:
@@ -214,12 +221,16 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         bound='multi',
         **sampler_settings
     )
+
+    # --- NEW: GENERATE PLOTS AUTOMATICALLY ---
+    print(f"Generating corner plot for {label}...")
+    result.plot_corner()
+    # -----------------------------------------
     
     runtime = time.time() - start_time
     print(f"{label} completed in {runtime/3600:.2f} hours")
     
     return result, runtime
-
 def create_informed_priors(posterior_result):
     """Create informed priors from posterior AND VERIFY THEM."""
     print("\n" + "*"*50)
