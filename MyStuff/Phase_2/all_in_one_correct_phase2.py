@@ -154,8 +154,7 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         )
         
         # Inject signal
-        ifo.inject_signal(injection_params, waveform_generator)
-    
+        ifo.inject_signal(parameters=injection_params, waveform_generator=waveform_generator)    
     # Set up priors
     if informed_priors is None:
         # Standard uniform priors
