@@ -78,7 +78,7 @@ def save_checkpoint(cumulative_asd, win_length, detector, asd_count, processed_t
 def plot_asd(cumulative_asd, win_length, detector, processed_time):
     """Helper to plot the ASD."""
     plt.figure(figsize=(12, 8))
-    if cumulative_asd and np.any(cumulative_asd.value > 0):
+    if cumulative_asd is not None and np.any(cumulative_asd.value > 0):
         frequencies = cumulative_asd.frequencies.value
         asd_values = cumulative_asd.value
         f_min, f_max = 10, 1000
