@@ -103,6 +103,8 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
     ifos = bilby.gw.detector.InterferometerList(['H1', 'L1'])
     
     # Waveform generator
+    # We use IMRPhenomD (Aligned Spin model).
+    # This means tilts and phi_12/phi_jl are irrelevant (physically 0 for this model).
     duration = 4
     sampling_frequency = 2048
     minimum_frequency = 20
@@ -121,7 +123,7 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         waveform_arguments=waveform_arguments
     )
     
-    # Set up interferometers
+    # Set up interferometers (PSD + Signal Injection)
     n_freq = int(duration * sampling_frequency / 2) + 1
     frequencies = np.linspace(0, sampling_frequency/2, n_freq)
     
@@ -153,49 +155,70 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
             frequency_domain_strain=np.zeros(n_freq, dtype=complex)
         )
         
-        # Inject signal (Explicit arguments fixed here)
+        # Inject signal
         ifo.inject_signal(parameters=injection_params, waveform_generator=waveform_generator)
     
-    # Set up priors
+    # ---------------------------------------------------------
+    # SET UP PRIORS (THE MAJOR UPDATE)
+    # ---------------------------------------------------------
     if informed_priors is None:
-        # Standard uniform priors
+        # --- THESIS GRADE BLIND PRIORS (11 PARAMETERS) ---
+        print(">>> Configuring 11-Parameter Blind Priors (Sky Location + Aligned Spins)")
         priors = bilby.gw.prior.BBHPriorDict()
-        priors['chirp_mass'] = Uniform(25.0, 35.0)
-        priors['mass_ratio'] = Uniform(0.5, 1.0)
-        priors['luminosity_distance'] = Uniform(200, 800)
-        priors['theta_jn'] = Sine()
-        priors['phase'] = Uniform(0, 2 * np.pi)
+        
+        # 1. Masses (Standard)
+        priors['chirp_mass'] = Uniform(25.0, 35.0, name='chirp_mass', unit='$M_{\odot}$')
+        priors['mass_ratio'] = Uniform(0.5, 1.0, name='mass_ratio')
+        
+        # 2. Extrinsic (Distance, Time, Phase, Inclination)
+        priors['luminosity_distance'] = Uniform(200, 800, name='luminosity_distance', unit='Mpc')
         priors['geocent_time'] = Uniform(
             injection_params['geocent_time'] - 0.1,
-            injection_params['geocent_time'] + 0.1
+            injection_params['geocent_time'] + 0.1,
+            name='geocent_time', unit='s'
         )
+        priors['phase'] = Uniform(0, 2 * np.pi, name='phase')
+        priors['theta_jn'] = Sine(name='theta_jn') 
+
+        # 3. SKY LOCATION (NEW! - "Blind" Search)
+        # The sampler must now find the source in the sky based on time delays.
+        priors['ra'] = Uniform(0, 2 * np.pi, name='ra')
+        priors['dec'] = Cosine(name='dec')
+        priors['psi'] = Uniform(0, np.pi, name='psi')
+
+        # 4. ALIGNED SPINS (NEW! - "Spinning" Black Holes)
+        # We search for z-component spins (chi_1, chi_2)
+        priors['chi_1'] = Uniform(-0.99, 0.99, name='chi_1')
+        priors['chi_2'] = Uniform(-0.99, 0.99, name='chi_2')
         
-        # --- PRODUCTION SCALING START ---
+        # 5. FIXED PARAMETERS (Physics Constraints)
+        # IMRPhenomD assumes aligned spins, so tilts must be 0.
+        for key in ['tilt_1', 'tilt_2', 'phi_12', 'phi_jl']:
+            priors[key] = 0.0
+
+        # --- PRODUCTION SAMPLER SETTINGS ---
         if 'scout' in label.lower():
-            print("--- PHASE 1: SCOUT RUN (Fast) ---")
-            # Keep Scout fast. We only need rough boundaries.
-            sampler_settings = {'npoints': 500, 'walks': 20} 
+            print("--- PHASE 1: SCOUT RUN (Fast & Rough) ---")
+            # 500 points is enough to find the "blob" in 11D space
+            sampler_settings = {'npoints': 500, 'walks': 50} 
             dlogz_val = 0.5 
         else:
             print("--- PHASE 0: BASELINE (LIGO PRODUCTION QUALITY) ---")
-            # 2048 is the standard for high-quality publication runs
-            # This will force the baseline to work VERY hard.
+            # 2048 points is the gold standard. This will take hours.
             sampler_settings = {'npoints': 2048, 'walks': 100}
             dlogz_val = 0.1
-        # --- PRODUCTION SCALING END ---
-
     else:
         # Phase 2: Refined (The Sniper)
         print("--- PHASE 2: REFINED RUN (High Precision) ---")
         priors = informed_priors
-        # We run with 1024 points. This gives excellent resolution
-        # but is still much lighter than the 2048 baseline.
+        
+        # CRITICAL: Ensure the fixed parameters stay fixed in the refined run too!
+        for key in ['tilt_1', 'tilt_2', 'phi_12', 'phi_jl']:
+            priors[key] = 0.0
+
+        # We run with 1024 points. Half the effort of baseline, same accuracy.
         sampler_settings = {'npoints': 1024, 'walks': 50}
-        dlogz_val = 0.1
-    
-    # Fix other parameters
-    for key in ['a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'ra', 'dec', 'psi']:
-        priors[key] = injection_params[key]
+        dlogz_val = 0.1 
     
     # Set up likelihood
     likelihood = bilby.gw.GravitationalWaveTransient(
@@ -220,10 +243,12 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         **sampler_settings
     )
 
-    # --- NEW: GENERATE PLOTS AUTOMATICALLY ---
+    # Generate plots automatically
     print(f"Generating corner plot for {label}...")
-    result.plot_corner()
-    # -----------------------------------------
+    try:
+        result.plot_corner()
+    except Exception as e:
+        print(f"Plotting failed (non-critical): {e}")
     
     runtime = time.time() - start_time
     print(f"{label} completed in {runtime/3600:.2f} hours")
