@@ -170,30 +170,28 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
             injection_params['geocent_time'] + 0.1
         )
         
-        # --- OPTIMIZATION START ---
-        # Check if this is the "Half Time" run (The Scout)
+        # --- PRODUCTION SCALING START ---
         if 'scout' in label.lower():
-            print("--- OPTIMIZING FOR SPEED (Phase 1: Scout) ---")
-            # Phase 1: FAST and ROUGH (The Scout)
-            # npoints=250 is enough to find the "general area"
-            sampler_settings = {'npoints': 250, 'walks': 10} 
+            print("--- PHASE 1: SCOUT RUN (Fast) ---")
+            # Keep Scout fast. We only need rough boundaries.
+            sampler_settings = {'npoints': 500, 'walks': 20} 
             dlogz_val = 0.5 
         else:
-            # Baseline: High Precision (The "Control Group")
-            # npoints=1000 is standard for publication-quality runs
-            print("--- RUNNING HIGH PRECISION BASELINE ---")
-            sampler_settings = {'npoints': 1000, 'walks': 50}
+            print("--- PHASE 0: BASELINE (LIGO PRODUCTION QUALITY) ---")
+            # 2048 is the standard for high-quality publication runs
+            # This will force the baseline to work VERY hard.
+            sampler_settings = {'npoints': 2048, 'walks': 100}
             dlogz_val = 0.1
-        # --- OPTIMIZATION END ---
+        # --- PRODUCTION SCALING END ---
 
     else:
         # Phase 2: Refined (The Sniper)
-        # We use fewer points than baseline (500) because we have informed priors,
-        # proving we can get the same result with less work.
-        print("--- RUNNING REFINED PRECISION ---")
+        print("--- PHASE 2: REFINED RUN (High Precision) ---")
         priors = informed_priors
-        sampler_settings = {'npoints': 500, 'walks': 20}
-        dlogz_val = 0.1 
+        # We run with 1024 points. This gives excellent resolution
+        # but is still much lighter than the 2048 baseline.
+        sampler_settings = {'npoints': 1024, 'walks': 50}
+        dlogz_val = 0.1
     
     # Fix other parameters
     for key in ['a_1', 'a_2', 'tilt_1', 'tilt_2', 'phi_12', 'phi_jl', 'ra', 'dec', 'psi']:
