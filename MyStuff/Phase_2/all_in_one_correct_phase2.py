@@ -249,57 +249,54 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
     
     return result, runtime
 def create_informed_priors(posterior_result):
-    """Create informed priors from posterior AND VERIFY THEM."""
+    """Create informed priors from posterior with LALSimulation safety limits."""
     print("\n" + "*"*50)
-    print("VERIFYING INFORMED PRIORS")
+    print("VERIFYING INFORMED PRIORS (WITH LAL SAFETY LIMITS)")
     print("*"*50)
     
-    informed_priors = PriorDict()
+    informed_priors = bilby.gw.prior.PriorDict()
     
-    # Define the original wide ranges (just for comparison)
-    original_ranges = {
-        'chirp_mass': 10.0,      # 35 - 25
-        'mass_ratio': 0.5,       # 1.0 - 0.5
-        'luminosity_distance': 600 # 800 - 200
-    }
+    params_to_refine = [
+        'chirp_mass', 'mass_ratio', 'luminosity_distance', 
+        'theta_jn', 'phase', 'geocent_time', 
+        'ra', 'dec', 'psi'
+    ]
     
-    params = ['chirp_mass', 'mass_ratio', 'luminosity_distance', 
-              'theta_jn', 'phase', 'geocent_time']
-    
-    for param in params:
+    orig_priors = posterior_result.priors
+
+    for param in params_to_refine:
         if param in posterior_result.posterior:
             samples = posterior_result.posterior[param].values
+            lower, median, upper = np.percentile(samples, [1, 50, 99])
+            width = (upper - lower)
+            buffer = width * 0.5 
             
-            # 1. Calculate the new range
-            lower, median, upper = np.percentile(samples, [5, 50, 95])
-            width = (upper - lower) * 1.5 / 2  # The buffer logic
+            old_min = orig_priors[param].minimum
+            old_max = orig_priors[param].maximum
             
-            new_min = median - width
-            new_max = median + width
-            new_range = new_max - new_min
+            new_min = max(lower - buffer, old_min)
+            new_max = min(upper + buffer, old_max)
 
-            # 2. Add to informed priors
-            if param == 'theta_jn':
-                informed_priors[param] = Sine(minimum=max(0, new_min), maximum=min(np.pi, new_max))
-            elif param == 'phase':
-                informed_priors[param] = Uniform(minimum=max(0, new_min), maximum=min(2*np.pi, new_max))
-            else:
-                informed_priors[param] = Uniform(minimum=new_min, maximum=new_max)
+            # --- LAL SAFETY PATCH ---
+            # Prevents floating point math from causing a C-level crash
+            if param == 'mass_ratio':
+                new_max = min(new_max, 0.999) # Crash happens if q > 1.0
+            elif param == 'theta_jn':
+                new_min = max(new_min, 0.001)
+                new_max = min(new_max, np.pi - 0.001)
+            elif param == 'dec':
+                new_min = max(new_min, -np.pi/2 + 0.001)
+                new_max = min(new_max, np.pi/2 - 0.001)
 
-            # 3. PRINT THE COMPARISON (The Proof)
-            if param in original_ranges:
-                orig = original_ranges[param]
-                improvement = (orig - new_range) / orig * 100
-                print(f"PARAM: {param}")
-                print(f"  Old Width: {orig:.2f}")
-                print(f"  New Width: {new_range:.2f}")
-                
-                if improvement > 0:
-                    print(f"  >>> SUCCESS: Range is {improvement:.1f}% tighter!")
-                else:
-                    print(f"  >>> WARNING: Range did not improve.")
+            # Assign prior based on type
+            if param == 'dec':
+                informed_priors[param] = bilby.core.prior.Cosine(minimum=new_min, maximum=new_max, name=param)
+            elif param == 'theta_jn':
+                informed_priors[param] = bilby.core.prior.Sine(minimum=new_min, maximum=new_max, name=param)
             else:
-                print(f"PARAM: {param} -> New range: {new_min:.2f} to {new_max:.2f}")
+                informed_priors[param] = bilby.core.prior.Uniform(minimum=new_min, maximum=new_max, name=param)
+            
+            print(f"  Refined {param}: {new_min:.2f} to {new_max:.2f}")
 
     print("*"*50 + "\n")
     return informed_priors
