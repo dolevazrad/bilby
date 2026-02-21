@@ -391,22 +391,27 @@ def Re_Weight_Posterior(refined_result, original_priors):
     
     ln_weights = np.zeros(len(posterior))
     
-    # Calculate the log prior probabilities for each sample
+    # We need a list of valid physical parameters to evaluate.
+    valid_keys = list(original_priors.keys())
+    
     for i in range(len(posterior)):
-        # Extract the specific values for this sample
-        sample = dict(posterior.iloc[i])
+        # Extract the raw sample
+        raw_sample = dict(posterior.iloc[i])
+        
+        # THE FIX: Strip out bilby metadata ('log_likelihood', 'log_prior', etc.)
+        # Keep only the parameters that actually exist in the prior dictionary.
+        clean_sample = {k: raw_sample[k] for k in valid_keys if k in raw_sample}
         
         # 1. Log probability under original wide prior
-        ln_p_orig = original_priors.ln_prob(sample)
+        ln_p_orig = original_priors.ln_prob(clean_sample)
         
         # 2. Log probability under restricted scout prior
-        ln_p_scout = scout_priors.ln_prob(sample)
+        ln_p_scout = scout_priors.ln_prob(clean_sample)
         
         # 3. The weight in log space
         ln_weights[i] = ln_p_orig - ln_p_scout
         
     # Calculate the correction term for the Evidence: ln( (1/N) * sum(w_i) )
-    # We use logsumexp to prevent computer underflow/overflow errors with tiny probabilities
     ln_weight_ratio = logsumexp(ln_weights) - np.log(len(ln_weights))
     
     corrected_log_evidence = refined_result.log_evidence + ln_weight_ratio
