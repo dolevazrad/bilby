@@ -9,7 +9,7 @@ Just run: python all_in_one_correct_phase2.py
 import numpy as np
 import bilby
 from bilby.gw.detector import PowerSpectralDensity
-from bilby.core.prior import Uniform, Sine, PriorDict
+from bilby.core.prior import Uniform, Sine, Cosine, PriorDict
 import matplotlib.pyplot as plt
 import pickle
 import os
@@ -20,6 +20,7 @@ import re
 from scipy.interpolate import interp1d
 from gwpy.frequencyseries import FrequencySeries
 from datetime import datetime
+from scipy.special import logsumexp
 
 # Configuration
 ASD_DIR = '/home/useradd/projects/bilby/MyStuff/my_outdir/GW_Noise_H1_L1_window_201225'
@@ -96,21 +97,20 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
             data = pickle.load(f)
         asds[det] = data['asd']
     
-    # Injection parameters
+    # Injection parameters (Includes tilts!)
     injection_params = create_injection_parameters()
     
     # Set up interferometers
     ifos = bilby.gw.detector.InterferometerList(['H1', 'L1'])
     
-    # Waveform generator
-    # We use IMRPhenomD (Aligned Spin model).
-    # This means tilts and phi_12/phi_jl are irrelevant (physically 0 for this model).
+    # --- MAJOR CHANGE: WAVEFORM MODEL ---
+    # We switch to IMRPhenomXPHM to support Precession (15 parameters)
     duration = 4
     sampling_frequency = 2048
     minimum_frequency = 20
     
     waveform_arguments = dict(
-        waveform_approximant='IMRPhenomD',
+        waveform_approximant='IMRPhenomXPHM',  # <--- CHANGED FROM D TO XPHM
         reference_frequency=50.0,
         minimum_frequency=minimum_frequency
     )
@@ -123,7 +123,7 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         waveform_arguments=waveform_arguments
     )
     
-    # Set up interferometers (PSD + Signal Injection)
+    # Set up interferometers
     n_freq = int(duration * sampling_frequency / 2) + 1
     frequencies = np.linspace(0, sampling_frequency/2, n_freq)
     
@@ -159,18 +159,17 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         ifo.inject_signal(parameters=injection_params, waveform_generator=waveform_generator)
     
     # ---------------------------------------------------------
-    # SET UP PRIORS (THE MAJOR UPDATE)
+    # SET UP PRIORS (FULL 15 PARAMETERS)
     # ---------------------------------------------------------
     if informed_priors is None:
-        # --- THESIS GRADE BLIND PRIORS (11 PARAMETERS) ---
-        print(">>> Configuring 11-Parameter Blind Priors (Sky Location + Aligned Spins)")
+        print(">>> Configuring 15-Parameter Precessing Priors")
         priors = bilby.gw.prior.BBHPriorDict()
         
-        # 1. Masses (Standard)
+        # 1. Masses
         priors['chirp_mass'] = Uniform(25.0, 35.0, name='chirp_mass', unit='$M_{\odot}$')
         priors['mass_ratio'] = Uniform(0.5, 1.0, name='mass_ratio')
         
-        # 2. Extrinsic (Distance, Time, Phase, Inclination)
+        # 2. Extrinsic
         priors['luminosity_distance'] = Uniform(200, 800, name='luminosity_distance', unit='Mpc')
         priors['geocent_time'] = Uniform(
             injection_params['geocent_time'] - 0.1,
@@ -180,43 +179,37 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         priors['phase'] = Uniform(0, 2 * np.pi, name='phase')
         priors['theta_jn'] = Sine(name='theta_jn') 
 
-        # 3. SKY LOCATION (NEW! - "Blind" Search)
-        # The sampler must now find the source in the sky based on time delays.
+        # 3. Sky Location (Blind)
         priors['ra'] = Uniform(0, 2 * np.pi, name='ra')
         priors['dec'] = Cosine(name='dec')
         priors['psi'] = Uniform(0, np.pi, name='psi')
 
-        # 4. ALIGNED SPINS (NEW! - "Spinning" Black Holes)
-        # We search for z-component spins (chi_1, chi_2)
-        priors['chi_1'] = Uniform(-0.99, 0.99, name='chi_1')
-        priors['chi_2'] = Uniform(-0.99, 0.99, name='chi_2')
-        
-        # 5. FIXED PARAMETERS (Physics Constraints)
-        # IMRPhenomD assumes aligned spins, so tilts must be 0.
-        for key in ['tilt_1', 'tilt_2', 'phi_12', 'phi_jl']:
-            priors[key] = 0.0
+        # 4. SPIN MAGNITUDES
+        priors['a_1'] = Uniform(0, 0.99, name='a_1')
+        priors['a_2'] = Uniform(0, 0.99, name='a_2')
 
+        # 5. SPIN TILTS & PHASES (The new 4 parameters)
+        # We use Sinusoidal priors for tilts (isotropic assumption)
+        priors['tilt_1'] = Sine(name='tilt_1')
+        priors['tilt_2'] = Sine(name='tilt_2')
+        priors['phi_12'] = Uniform(0, 2 * np.pi, name='phi_12', boundary='periodic')
+        priors['phi_jl'] = Uniform(0, 2 * np.pi, name='phi_jl', boundary='periodic')
+        
         # --- PRODUCTION SAMPLER SETTINGS ---
         if 'scout' in label.lower():
-            print("--- PHASE 1: SCOUT RUN (Fast & Rough) ---")
-            # 500 points is enough to find the "blob" in 11D space
+            print("--- PHASE 1: SCOUT RUN (Fast) ---")
+            # 500 points is decent for a scout run
             sampler_settings = {'npoints': 500, 'walks': 50} 
             dlogz_val = 0.5 
         else:
-            print("--- PHASE 0: BASELINE (LIGO PRODUCTION QUALITY) ---")
-            # 2048 points is the gold standard. This will take hours.
+            print("--- PHASE 0: BASELINE (PRODUCTION QUALITY) ---")
+            # 2048 points is standard
             sampler_settings = {'npoints': 2048, 'walks': 100}
             dlogz_val = 0.1
     else:
-        # Phase 2: Refined (The Sniper)
+        # Phase 2: Refined
         print("--- PHASE 2: REFINED RUN (High Precision) ---")
         priors = informed_priors
-        
-        # CRITICAL: Ensure the fixed parameters stay fixed in the refined run too!
-        for key in ['tilt_1', 'tilt_2', 'phi_12', 'phi_jl']:
-            priors[key] = 0.0
-
-        # We run with 1024 points. Half the effort of baseline, same accuracy.
         sampler_settings = {'npoints': 1024, 'walks': 50}
         dlogz_val = 0.1 
     
@@ -226,7 +219,7 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         waveform_generator=waveform_generator
     )
     
-    # Run sampler
+    # Run sampler (Safe Mode for WSL)
     start_time = time.time()
     
     result = bilby.run_sampler(
@@ -240,10 +233,13 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         dlogz=dlogz_val,
         sample='rwalk',
         bound='multi',
+        npool=1,
+        check_point=False,      
+        print_progress=False,  
         **sampler_settings
     )
 
-    # Generate plots automatically
+    # Generate plots
     print(f"Generating corner plot for {label}...")
     try:
         result.plot_corner()
@@ -381,12 +377,55 @@ def analyze_results(outdir, times):
     with open(os.path.join(outdir, 'summary.json'), 'w') as f:
         json.dump(summary, f, indent=4)
 
+def Re_Weight_Posterior(refined_result, original_priors):
+    """
+    @brief Re-weights the posterior samples from a restricted prior run to reflect the original wide priors.
+    @param refined_result Bilby result object from the Refined run.
+    @param original_priors The original wide PriorDict.
+    @return corrected_log_bayes_factor The mathematically honest Bayes Factor.
+    """
+    print("\n" + "="*60)
+    print("PERFORMING IMPORTANCE RE-WEIGHTING (HONEST EVIDENCE)")
+    print("="*60)
+    
+    scout_priors = refined_result.priors
+    posterior = refined_result.posterior
+    
+    ln_weights = np.zeros(len(posterior))
+    
+    # Calculate the log prior probabilities for each sample
+    for i in range(len(posterior)):
+        # Extract the specific values for this sample
+        sample = dict(posterior.iloc[i])
+        
+        # 1. Log probability under original wide prior
+        ln_p_orig = original_priors.ln_prob(sample)
+        
+        # 2. Log probability under restricted scout prior
+        ln_p_scout = scout_priors.ln_prob(sample)
+        
+        # 3. The weight in log space
+        ln_weights[i] = ln_p_orig - ln_p_scout
+        
+    # Calculate the correction term for the Evidence: ln( (1/N) * sum(w_i) )
+    # We use logsumexp to prevent computer underflow/overflow errors with tiny probabilities
+    ln_weight_ratio = logsumexp(ln_weights) - np.log(len(ln_weights))
+    
+    corrected_log_evidence = refined_result.log_evidence + ln_weight_ratio
+    corrected_log_bayes_factor = refined_result.log_bayes_factor + ln_weight_ratio
+    
+    print(f"Original (Inflated) ln(BF): {refined_result.log_bayes_factor:.2f}")
+    print(f"Evidence Correction Shift:  {ln_weight_ratio:.2f}")
+    print(f"Corrected (Honest) ln(BF):  {corrected_log_bayes_factor:.2f}")
+    print("="*60 + "\n")
+    
+    return corrected_log_bayes_factor
 def main():
     print("="*70)
-    print("PHASE 2: SENSITIVITY TEST (1/2 vs 1/4 Start)")
+    print("PHASE 2: SENSITIVITY TEST (Overnight Run with Re-weighting)")
     print("="*70)
     
-    # 1. Find our three key files
+    # 1. Find our files
     full_files, half_files, quarter_files = find_asd_scenarios()
     
     if not full_files:
@@ -405,41 +444,33 @@ def main():
     print("\n" + "="*50)
     print(f"BASELINE: Running Full Time ({full_files['hours']:.1f}h) from scratch")
     print("="*50)
-    # Note: We pass None for informed_priors here
     baseline_result, times['baseline'] = run_pe(full_files, 'baseline_full', outdir)
 
-
     # -------------------------------------------------------
-    # EXPERIMENT A: The "Half-Time" Approach
+    # EXPERIMENT A: STEP 1 - THE SCOUT RUN
     # -------------------------------------------------------
     print("\n" + "="*50)
-    print(f"EXP A: Starting with Half Time ({half_files['hours']:.1f}h)")
+    print(f"EXP A: Starting Scout Run with Half Time ({half_files['hours']:.1f}h)")
     print("="*50)
-    
-    # A1. Run Scout (Fast & Rough)
     half_result, times['half_scout'] = run_pe(half_files, 'expA_half_scout', outdir)
+
+    # -------------------------------------------------------
+    # EXPERIMENT A: STEP 2 - REFINED (With Importance Re-weighting)
+    # -------------------------------------------------------
+    print("\n>>> STARTING REFINED RUN A...")
     
-    # A2. Refine on Full Data
+    # 1. Create the tight priors for the run using the scout result
     priors_A = create_informed_priors(half_result)
-    print("\n>>> Refinement A: Using Half-Time priors on Full Data...")
+    
+    # 2. Run the PE (This saves the 17% time!)
     res_A, times['refine_A'] = run_pe(full_files, 'expA_refined', outdir, priors_A)
 
-
-    # -------------------------------------------------------
-    # EXPERIMENT B: The "Quarter-Time" Approach
-    # -------------------------------------------------------
-    print("\n" + "="*50)
-    print(f"EXP B: Starting with Quarter Time ({quarter_files['hours']:.1f}h)")
-    print("="*50)
+    # 3. Re-Weighting (The Mentor's Fix)
+    # We grab the EXACT priors used in the Baseline run to ensure 100% mathematical accuracy.
+    original_wide_priors = baseline_result.priors
     
-    # B1. Run Scout (Fast & Rough)
-    # Note: The 'scout' label triggers the optimization in run_pe
-    quarter_result, times['quarter_scout'] = run_pe(quarter_files, 'expB_quarter_scout', outdir)
-    
-    # B2. Refine on Full Data
-    priors_B = create_informed_priors(quarter_result)
-    print("\n>>> Refinement B: Using Quarter-Time priors on Full Data...")
-    res_B, times['refine_B'] = run_pe(full_files, 'expB_refined', outdir, priors_B)
+    # Run the math
+    honest_bf = Re_Weight_Posterior(res_A, original_wide_priors)
 
     # -------------------------------------------------------
     # SUMMARY
@@ -448,14 +479,13 @@ def main():
     print("FINAL RESULTS")
     print("="*70)
     
-    # Calculate totals
     total_A = times['half_scout'] + times['refine_A']
-    total_B = times['quarter_scout'] + times['refine_B']
     baseline = times['baseline']
 
     print(f"Baseline Time: {baseline/3600:.2f}h")
     print(f"Exp A (1/2 Start): {total_A/3600:.2f}h (Savings: {(baseline-total_A)/baseline*100:.1f}%)")
-    print(f"Exp B (1/4 Start): {total_B/3600:.2f}h (Savings: {(baseline-total_B)/baseline*100:.1f}%)")
+    print(f"Baseline ln(BF): {baseline_result.log_bayes_factor:.2f}")
+    print(f"Refined Honest ln(BF): {honest_bf:.2f}")
     
     # Save times to file
     with open(os.path.join(outdir, 'final_timing.json'), 'w') as f:
