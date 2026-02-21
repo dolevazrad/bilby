@@ -9,7 +9,7 @@ Just run: python all_in_one_correct_phase2.py
 import numpy as np
 import bilby
 from bilby.gw.detector import PowerSpectralDensity
-from bilby.core.prior import Uniform, Sine, PriorDict
+from bilby.core.prior import Uniform, Sine, Cosine, PriorDict
 import matplotlib.pyplot as plt
 import pickle
 import os
@@ -87,30 +87,27 @@ def create_injection_parameters():
 
 def run_pe(asd_files, label, outdir, informed_priors=None):
     """Run parameter estimation with given ASD files."""
-    print(f"\nRunning {label} PE...")
+    print(f"\n" + "="*60)
+    print(f"STARTING RUN: {label}")
+    print("="*60)
     
-    # Load ASDs
+    # 1. Load ASDs
     asds = {}
     for det in ['H1', 'L1']:
         with open(asd_files[det], 'rb') as f:
             data = pickle.load(f)
         asds[det] = data['asd']
     
-    # Injection parameters
+    # 2. Injection parameters
     injection_params = create_injection_parameters()
     
-    # Set up interferometers
-    ifos = bilby.gw.detector.InterferometerList(['H1', 'L1'])
-    
-    # Waveform generator
-    # We use IMRPhenomD (Aligned Spin model).
-    # This means tilts and phi_12/phi_jl are irrelevant (physically 0 for this model).
+    # 3. Waveform Generator (IMRPhenomXPHM for 15-Parameters)
     duration = 4
     sampling_frequency = 2048
     minimum_frequency = 20
     
     waveform_arguments = dict(
-        waveform_approximant='IMRPhenomD',
+        waveform_approximant='IMRPhenomXPHM',
         reference_frequency=50.0,
         minimum_frequency=minimum_frequency
     )
@@ -123,112 +120,92 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         waveform_arguments=waveform_arguments
     )
     
-    # Set up interferometers (PSD + Signal Injection)
+    # 4. Set up Interferometers
+    ifos = bilby.gw.detector.InterferometerList(['H1', 'L1'])
     n_freq = int(duration * sampling_frequency / 2) + 1
     frequencies = np.linspace(0, sampling_frequency/2, n_freq)
     
     for ifo in ifos:
-        # Interpolate ASD
         asd = asds[ifo.name]
-        interp = interp1d(asd.frequencies.value, asd.value, 
-                         bounds_error=False, fill_value='extrapolate')
+        interp = interp1d(asd.frequencies.value, asd.value, bounds_error=False, fill_value='extrapolate')
         interpolated_asd = interp(frequencies)
         
-        # Set properties
         ifo.minimum_frequency = minimum_frequency
         ifo.maximum_frequency = sampling_frequency/2
         ifo.sampling_frequency = sampling_frequency
         ifo.duration = duration
         ifo.start_time = injection_params['geocent_time'] - duration + 0.5
+        ifo.power_spectral_density = PowerSpectralDensity(frequency_array=frequencies, psd_array=interpolated_asd**2)
         
-        # Set PSD
-        ifo.power_spectral_density = PowerSpectralDensity(
-            frequency_array=frequencies,
-            psd_array=interpolated_asd**2
-        )
-        
-        # Initialize strain
+        # Initialize zero strain and inject
         ifo.strain_data.roll_off = 0.2
         ifo.strain_data.set_from_frequency_domain_strain(
-            sampling_frequency=sampling_frequency,
-            duration=duration,
-            frequency_domain_strain=np.zeros(n_freq, dtype=complex)
-        )
-        
-        # Inject signal
+            sampling_frequency=sampling_frequency, duration=duration, 
+            frequency_domain_strain=np.zeros(n_freq, dtype=complex))
         ifo.inject_signal(parameters=injection_params, waveform_generator=waveform_generator)
     
     # ---------------------------------------------------------
-    # SET UP PRIORS (THE MAJOR UPDATE)
+    # 5. DEFINE PRIORS (The Clean Way)
+    # ---------------------------------------------------------
+    # We define the full 15-param priors here so they exist for EVERY run.
+    priors = bilby.gw.prior.BBHPriorDict()
+    
+    # Masses & Extrinsic
+    priors['chirp_mass'] = Uniform(25.0, 35.0, name='chirp_mass', unit='$M_{\odot}$')
+    priors['mass_ratio'] = Uniform(0.5, 1.0, name='mass_ratio')
+    priors['luminosity_distance'] = Uniform(200, 800, name='luminosity_distance', unit='Mpc')
+    priors['geocent_time'] = Uniform(injection_params['geocent_time'] - 0.1, injection_params['geocent_time'] + 0.1, name='geocent_time', unit='s')
+    priors['phase'] = Uniform(0, 2 * np.pi, name='phase')
+    priors['theta_jn'] = Sine(name='theta_jn') 
+
+    # Sky Location
+    priors['ra'] = Uniform(0, 2 * np.pi, name='ra')
+    priors['dec'] = Cosine(name='dec')
+    priors['psi'] = Uniform(0, np.pi, name='psi')
+
+    # Spins (Magnitudes & Tilts)
+    priors['a_1'] = Uniform(0, 0.99, name='a_1')
+    priors['a_2'] = Uniform(0, 0.99, name='a_2')
+    priors['tilt_1'] = Sine(name='tilt_1')
+    priors['tilt_2'] = Sine(name='tilt_2')
+    priors['phi_12'] = Uniform(0, 2 * np.pi, name='phi_12', boundary='periodic')
+    priors['phi_jl'] = Uniform(0, 2 * np.pi, name='phi_jl', boundary='periodic')
+
+    # ---------------------------------------------------------
+    # 6. APPLY PHASE SETTINGS
     # ---------------------------------------------------------
     if informed_priors is None:
-        # --- THESIS GRADE BLIND PRIORS (11 PARAMETERS) ---
-        print(">>> Configuring 11-Parameter Blind Priors (Sky Location + Aligned Spins)")
-        priors = bilby.gw.prior.BBHPriorDict()
-        
-        # 1. Masses (Standard)
-        priors['chirp_mass'] = Uniform(25.0, 35.0, name='chirp_mass', unit='$M_{\odot}$')
-        priors['mass_ratio'] = Uniform(0.5, 1.0, name='mass_ratio')
-        
-        # 2. Extrinsic (Distance, Time, Phase, Inclination)
-        priors['luminosity_distance'] = Uniform(200, 800, name='luminosity_distance', unit='Mpc')
-        priors['geocent_time'] = Uniform(
-            injection_params['geocent_time'] - 0.1,
-            injection_params['geocent_time'] + 0.1,
-            name='geocent_time', unit='s'
-        )
-        priors['phase'] = Uniform(0, 2 * np.pi, name='phase')
-        priors['theta_jn'] = Sine(name='theta_jn') 
-
-        # 3. SKY LOCATION (NEW! - "Blind" Search)
-        # The sampler must now find the source in the sky based on time delays.
-        priors['ra'] = Uniform(0, 2 * np.pi, name='ra')
-        priors['dec'] = Cosine(name='dec')
-        priors['psi'] = Uniform(0, np.pi, name='psi')
-
-        # 4. ALIGNED SPINS (NEW! - "Spinning" Black Holes)
-        # We search for z-component spins (chi_1, chi_2)
-        priors['chi_1'] = Uniform(-0.99, 0.99, name='chi_1')
-        priors['chi_2'] = Uniform(-0.99, 0.99, name='chi_2')
-        
-        # 5. FIXED PARAMETERS (Physics Constraints)
-        # IMRPhenomD assumes aligned spins, so tilts must be 0.
-        for key in ['tilt_1', 'tilt_2', 'phi_12', 'phi_jl']:
-            priors[key] = 0.0
-
-        # --- PRODUCTION SAMPLER SETTINGS ---
+        # --- BLIND RUNS ---
         if 'scout' in label.lower():
-            print("--- PHASE 1: SCOUT RUN (Fast & Rough) ---")
-            # 500 points is enough to find the "blob" in 11D space
+            print(">>> MODE: Scout Run (Fast & Rough)")
             sampler_settings = {'npoints': 500, 'walks': 50} 
             dlogz_val = 0.5 
         else:
-            print("--- PHASE 0: BASELINE (LIGO PRODUCTION QUALITY) ---")
-            # 2048 points is the gold standard. This will take hours.
+            print(">>> MODE: Baseline Production Run (High Precision)")
             sampler_settings = {'npoints': 2048, 'walks': 100}
             dlogz_val = 0.1
     else:
-        # Phase 2: Refined (The Sniper)
-        print("--- PHASE 2: REFINED RUN (High Precision) ---")
-        priors = informed_priors
-        
-        # CRITICAL: Ensure the fixed parameters stay fixed in the refined run too!
-        for key in ['tilt_1', 'tilt_2', 'phi_12', 'phi_jl']:
-            priors[key] = 0.0
-
-        # We run with 1024 points. Half the effort of baseline, same accuracy.
+        # --- REFINED RUNS ---
+        print(">>> MODE: Refined Run (Informed Priors)")
+        # CRITICAL: We overwrite only the refined keys. The rest remain wide.
+        priors.update(informed_priors)
         sampler_settings = {'npoints': 1024, 'walks': 50}
         dlogz_val = 0.1 
+
+    # ---------------------------------------------------------
+    # 7. PRE-FLIGHT CHECK (Stop Running Blind!)
+    # ---------------------------------------------------------
+    print("\n[Active Parameters]")
+    for key in priors:
+        if isinstance(priors[key], bilby.core.prior.Constraint):
+            continue
+        print(f"  - {key}")
+    print("-" * 30)
+
+    # 8. Run Sampler
+    likelihood = bilby.gw.GravitationalWaveTransient(interferometers=ifos, waveform_generator=waveform_generator)
     
-    # Set up likelihood
-    likelihood = bilby.gw.GravitationalWaveTransient(
-        interferometers=ifos,
-        waveform_generator=waveform_generator
-    )
-    
-    # Run sampler
     start_time = time.time()
-    
     result = bilby.run_sampler(
         likelihood=likelihood,
         priors=priors,
@@ -240,10 +217,13 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         dlogz=dlogz_val,
         sample='rwalk',
         bound='multi',
+        npool=1,               # Safe for WSL
+        check_point=False,     # Prevents WSL crash
+        print_progress=True,   # KEEPS VISIBILITY ON
         **sampler_settings
     )
 
-    # Generate plots automatically
+    # 9. Plotting
     print(f"Generating corner plot for {label}...")
     try:
         result.plot_corner()
@@ -251,64 +231,9 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         print(f"Plotting failed (non-critical): {e}")
     
     runtime = time.time() - start_time
-    print(f"{label} completed in {runtime/3600:.2f} hours")
+    print(f"✓ {label} completed in {runtime/3600:.2f} hours")
     
     return result, runtime
-def create_informed_priors(posterior_result):
-    """Create informed priors from posterior AND VERIFY THEM."""
-    print("\n" + "*"*50)
-    print("VERIFYING INFORMED PRIORS")
-    print("*"*50)
-    
-    informed_priors = PriorDict()
-    
-    # Define the original wide ranges (just for comparison)
-    original_ranges = {
-        'chirp_mass': 10.0,      # 35 - 25
-        'mass_ratio': 0.5,       # 1.0 - 0.5
-        'luminosity_distance': 600 # 800 - 200
-    }
-    
-    params = ['chirp_mass', 'mass_ratio', 'luminosity_distance', 
-              'theta_jn', 'phase', 'geocent_time']
-    
-    for param in params:
-        if param in posterior_result.posterior:
-            samples = posterior_result.posterior[param].values
-            
-            # 1. Calculate the new range
-            lower, median, upper = np.percentile(samples, [5, 50, 95])
-            width = (upper - lower) * 1.5 / 2  # The buffer logic
-            
-            new_min = median - width
-            new_max = median + width
-            new_range = new_max - new_min
-
-            # 2. Add to informed priors
-            if param == 'theta_jn':
-                informed_priors[param] = Sine(minimum=max(0, new_min), maximum=min(np.pi, new_max))
-            elif param == 'phase':
-                informed_priors[param] = Uniform(minimum=max(0, new_min), maximum=min(2*np.pi, new_max))
-            else:
-                informed_priors[param] = Uniform(minimum=new_min, maximum=new_max)
-
-            # 3. PRINT THE COMPARISON (The Proof)
-            if param in original_ranges:
-                orig = original_ranges[param]
-                improvement = (orig - new_range) / orig * 100
-                print(f"PARAM: {param}")
-                print(f"  Old Width: {orig:.2f}")
-                print(f"  New Width: {new_range:.2f}")
-                
-                if improvement > 0:
-                    print(f"  >>> SUCCESS: Range is {improvement:.1f}% tighter!")
-                else:
-                    print(f"  >>> WARNING: Range did not improve.")
-            else:
-                print(f"PARAM: {param} -> New range: {new_min:.2f} to {new_max:.2f}")
-
-    print("*"*50 + "\n")
-    return informed_priors
 
 def analyze_results(outdir, times):
     """Analyze and compare results."""
@@ -380,7 +305,127 @@ def analyze_results(outdir, times):
     
     with open(os.path.join(outdir, 'summary.json'), 'w') as f:
         json.dump(summary, f, indent=4)
+def create_informed_priors(posterior_result):
+    """Create informed priors from posterior AND VERIFY THEM."""
+    print("\n" + "*"*50)
+    print("VERIFYING INFORMED PRIORS")
+    print("*"*50)
+    
+    informed_priors = PriorDict()
+    
+    # We refine the main parameters, but leave spins wide to be safe
+    params_to_refine = [
+        'chirp_mass', 'mass_ratio', 'luminosity_distance', 
+        'theta_jn', 'phase', 'geocent_time', 
+        'ra', 'dec', 'psi'
+    ]
+    
+    # Get the original priors to check bounds
+    orig_priors = posterior_result.priors
 
+    for param in params_to_refine:
+        if param in posterior_result.posterior:
+            samples = posterior_result.posterior[param].values
+            
+            # 1. Calculate the new range (1st to 99th percentile for safety)
+            lower, median, upper = np.percentile(samples, [1, 50, 99])
+            
+            # 2. Add a generous buffer (50% width on each side)
+            width = (upper - lower)
+            buffer = width * 0.5 
+            
+            # 3. Clip to physical bounds (don't go below 0 for mass, etc.)
+            old_min = orig_priors[param].minimum
+            old_max = orig_priors[param].maximum
+            
+            new_min = max(lower - buffer, old_min)
+            new_max = min(upper + buffer, old_max)
+
+            # 4. Create the new prior
+            if param == 'dec':
+                informed_priors[param] = Cosine(minimum=new_min, maximum=new_max, name=param)
+            elif param == 'theta_jn':
+                informed_priors[param] = Sine(minimum=new_min, maximum=new_max, name=param)
+            else:
+                informed_priors[param] = Uniform(minimum=new_min, maximum=new_max, name=param)
+            
+            print(f"  Refined {param}: {new_min:.2f} to {new_max:.2f}")
+
+    print("*"*50 + "\n")
+    return informed_priors
+
+def main_rescue():
+    print("="*70)
+    print("PHASE 2: SENSITIVITY TEST (RESCUE MODE)")
+    print("="*70)
+    
+    # 1. Find ASD files
+    full_files, half_files, quarter_files = find_asd_scenarios()
+    if not full_files: return
+
+    # --- RESUME CONFIGURATION ---
+    # We point strictly to the folder where your 5-hour run lives:
+    outdir = '/home/useradd/projects/bilby/MyStuff/my_outdir/phase_2/sensitivity_test_20260104_113942'
+    print(f"Resuming analysis in: {outdir}")
+    
+    times = {}
+
+    # -------------------------------------------------------
+    # STEP 0: LOAD BASELINE (Do not re-run)
+    # -------------------------------------------------------
+    print("\nLoading existing Baseline results...")
+    try:
+        baseline_result = bilby.result.read_in_result(os.path.join(outdir, 'baseline_full_result.json'))
+        # Estimate runtime from your log (4.21 hours)
+        times['baseline'] = 4.21 * 3600 
+        print("✓ Baseline loaded successfully.")
+    except Exception as e:
+        print(f"Could not load baseline: {e}. You might need to re-run it.")
+        return
+
+    # -------------------------------------------------------
+    # EXPERIMENT A: HALF TIME (Resume)
+    # -------------------------------------------------------
+    print("\nLoading existing Half-Scout results...")
+    try:
+        # Load the scout run you just finished
+        half_result = bilby.result.read_in_result(os.path.join(outdir, 'expA_half_scout_result.json'))
+        times['half_scout'] = 1.22 * 3600 # From your log
+        print("✓ Half-Scout loaded successfully.")
+    except:
+        # If it failed to save, re-run it
+        print("Scout result missing. Re-running...")
+        half_result, times['half_scout'] = run_pe(half_files, 'expA_half_scout', outdir)
+
+    # -------------------------------------------------------
+    # EXPERIMENT A: REFINED (This is where it crashed!)
+    # -------------------------------------------------------
+    print("\n>>> STARTING REFINED RUN A (The Crash Point)...")
+    
+    # THIS FUNCTION NOW EXISTS!
+    priors_A = create_informed_priors(half_result)
+    
+    res_A, times['refine_A'] = run_pe(full_files, 'expA_refined', outdir, priors_A)
+
+    # -------------------------------------------------------
+    # SUMMARY
+    # -------------------------------------------------------
+    print("\n" + "="*70)
+    print("FINAL RESULTS")
+    print("="*70)
+    
+    total_A = times['half_scout'] + times['refine_A']
+    baseline = times['baseline']
+
+    print(f"Baseline Time: {baseline/3600:.2f}h")
+    print(f"Exp A (1/2 Start): {total_A/3600:.2f}h (Savings: {(baseline-total_A)/baseline*100:.1f}%)")
+    
+    # Save times
+    with open(os.path.join(outdir, 'final_timing_rescue.json'), 'w') as f:
+        json.dump(times, f, indent=4)
+
+
+    
 def main():
     print("="*70)
     print("PHASE 2: SENSITIVITY TEST (1/2 vs 1/4 Start)")
@@ -462,4 +507,5 @@ def main():
         json.dump(times, f, indent=4)
 
 if __name__ == "__main__":
-    main()
+    main_rescue()
+    # main()
