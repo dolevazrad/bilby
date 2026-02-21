@@ -158,60 +158,58 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         # Inject signal
         ifo.inject_signal(parameters=injection_params, waveform_generator=waveform_generator)
     
-    # ---------------------------------------------------------
+   # ---------------------------------------------------------
     # SET UP PRIORS (FULL 15 PARAMETERS)
     # ---------------------------------------------------------
+    # DEFINE ALL 15 PRIORS FOR EVERY RUN FIRST
+    print(">>> Configuring 15-Parameter Precessing Priors")
+    priors = bilby.gw.prior.BBHPriorDict()
+    
+    # 1. Masses
+    priors['chirp_mass'] = Uniform(25.0, 35.0, name='chirp_mass', unit='$M_{\odot}$')
+    priors['mass_ratio'] = Uniform(0.5, 1.0, name='mass_ratio')
+    
+    # 2. Extrinsic
+    priors['luminosity_distance'] = Uniform(200, 800, name='luminosity_distance', unit='Mpc')
+    priors['geocent_time'] = Uniform(
+        injection_params['geocent_time'] - 0.1,
+        injection_params['geocent_time'] + 0.1,
+        name='geocent_time', unit='s'
+    )
+    priors['phase'] = Uniform(0, 2 * np.pi, name='phase')
+    priors['theta_jn'] = Sine(name='theta_jn') 
+
+    # 3. Sky Location (Blind)
+    priors['ra'] = Uniform(0, 2 * np.pi, name='ra')
+    priors['dec'] = Cosine(name='dec')
+    priors['psi'] = Uniform(0, np.pi, name='psi')
+
+    # 4. SPIN MAGNITUDES
+    priors['a_1'] = Uniform(0, 0.99, name='a_1')
+    priors['a_2'] = Uniform(0, 0.99, name='a_2')
+
+    # 5. SPIN TILTS & PHASES 
+    priors['tilt_1'] = Sine(name='tilt_1')
+    priors['tilt_2'] = Sine(name='tilt_2')
+    priors['phi_12'] = Uniform(0, 2 * np.pi, name='phi_12', boundary='periodic')
+    priors['phi_jl'] = Uniform(0, 2 * np.pi, name='phi_jl', boundary='periodic')
+
+    # --- APPLY SAMPLER SETTINGS AND UPDATES ---
     if informed_priors is None:
-        print(">>> Configuring 15-Parameter Precessing Priors")
-        priors = bilby.gw.prior.BBHPriorDict()
-        
-        # 1. Masses
-        priors['chirp_mass'] = Uniform(25.0, 35.0, name='chirp_mass', unit='$M_{\odot}$')
-        priors['mass_ratio'] = Uniform(0.5, 1.0, name='mass_ratio')
-        
-        # 2. Extrinsic
-        priors['luminosity_distance'] = Uniform(200, 800, name='luminosity_distance', unit='Mpc')
-        priors['geocent_time'] = Uniform(
-            injection_params['geocent_time'] - 0.1,
-            injection_params['geocent_time'] + 0.1,
-            name='geocent_time', unit='s'
-        )
-        priors['phase'] = Uniform(0, 2 * np.pi, name='phase')
-        priors['theta_jn'] = Sine(name='theta_jn') 
-
-        # 3. Sky Location (Blind)
-        priors['ra'] = Uniform(0, 2 * np.pi, name='ra')
-        priors['dec'] = Cosine(name='dec')
-        priors['psi'] = Uniform(0, np.pi, name='psi')
-
-        # 4. SPIN MAGNITUDES
-        priors['a_1'] = Uniform(0, 0.99, name='a_1')
-        priors['a_2'] = Uniform(0, 0.99, name='a_2')
-
-        # 5. SPIN TILTS & PHASES (The new 4 parameters)
-        # We use Sinusoidal priors for tilts (isotropic assumption)
-        priors['tilt_1'] = Sine(name='tilt_1')
-        priors['tilt_2'] = Sine(name='tilt_2')
-        priors['phi_12'] = Uniform(0, 2 * np.pi, name='phi_12', boundary='periodic')
-        priors['phi_jl'] = Uniform(0, 2 * np.pi, name='phi_jl', boundary='periodic')
-        
-        # --- PRODUCTION SAMPLER SETTINGS ---
         if 'scout' in label.lower():
             print("--- PHASE 1: SCOUT RUN (Fast) ---")
-            # 500 points is decent for a scout run
             sampler_settings = {'npoints': 500, 'walks': 50} 
             dlogz_val = 0.5 
         else:
             print("--- PHASE 0: BASELINE (PRODUCTION QUALITY) ---")
-            # 2048 points is standard
             sampler_settings = {'npoints': 2048, 'walks': 100}
             dlogz_val = 0.1
     else:
         # Phase 2: Refined
         print("--- PHASE 2: REFINED RUN (High Precision) ---")
-        priors = informed_priors
+        priors.update(informed_priors) # <--- THE FIX: Updates only the refined ones!
         sampler_settings = {'npoints': 1024, 'walks': 50}
-        dlogz_val = 0.1 
+        dlogz_val = 0.1
     
     # Set up likelihood
     likelihood = bilby.gw.GravitationalWaveTransient(
@@ -235,7 +233,7 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
         bound='multi',
         npool=1,
         check_point=False,      
-        print_progress=False,  
+        print_progress=True,  
         **sampler_settings
     )
 
