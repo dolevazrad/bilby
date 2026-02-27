@@ -12,12 +12,12 @@ from Analyzing_GW_Noise import find_data_gaps, combine_asds
 import urllib3.util.connection as urllib3_cn
 
 # --- CONFIGURATION ---
-PARENT_LABEL = "GW_Noise_H1_L1_window_201225"
+PARENT_LABEL = "GW_Noise_H1_L1_window_270226"
 MERGER_TIME = 1238303719
-
+MERGER_TIME = 1126259462
 # Change this list to ['H1', 'L1'] when you want to run both!
 detectors = ['H1', 'L1']
-detectors = ['L1']
+#detectors = ['L1']
 # ---------------------
 
 # FORCE IPv4
