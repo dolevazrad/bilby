@@ -23,7 +23,7 @@ from datetime import datetime
 from scipy.special import logsumexp
 
 # Configuration
-ASD_DIR = '/home/useradd/projects/bilby/MyStuff/my_outdir/GW_Noise_H1_L1_window_201225'
+ASD_DIR = '/home/useradd/projects/bilby/MyStuff/my_outdir/GW_Noise_H1_L1_window_270226'
 OUTPUT_BASE = '/home/useradd/projects/bilby/MyStuff/my_outdir/phase_2'
 
 def find_asd_scenarios():
@@ -71,22 +71,22 @@ def find_asd_scenarios():
     print(f"✓ Quarter-Time Scout:  {quarter_time['hours']:.1f} hours (Target: {target_quarter/3600:.1f})")
 
     return full_time, half_time, quarter_time
-def create_injection_parameters():
-    """Create test injection parameters."""
+def create_injection_parameters(distance=450.0):
+    """Create test injection parameters with dynamic distance for SNR testing."""
     return {
         'chirp_mass': 30.0,
         'mass_ratio': 0.9,
-        'luminosity_distance': 450.0,
+        'luminosity_distance': distance, # <--- DYNAMIC
         'a_1': 0.0, 'a_2': 0.0,
         'tilt_1': 0.0, 'tilt_2': 0.0,
         'phi_12': 0.0, 'phi_jl': 0.0,
         'theta_jn': 0.8,
         'phase': 1.0,
         'ra': 1.5, 'dec': -1.0, 'psi': 2.5,
-        'geocent_time': 1238303719.0
+        'geocent_time': 1126259462.0 
     }
 
-def run_pe(asd_files, label, outdir, informed_priors=None):
+def run_pe(asd_files, label, outdir, informed_priors=None, custom_injection_params=None):
     """Run parameter estimation with given ASD files."""
     print(f"\nRunning {label} PE...")
     
@@ -97,8 +97,11 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
             data = pickle.load(f)
         asds[det] = data['asd']
     
-    # Injection parameters (Includes tilts!)
-    injection_params = create_injection_parameters()
+    # --- NEW: Use custom params if provided, else use default ---
+    if custom_injection_params is None:
+        injection_params = create_injection_parameters()
+    else:
+        injection_params = custom_injection_params
     
     # Set up interferometers
     ifos = bilby.gw.detector.InterferometerList(['H1', 'L1'])
@@ -249,58 +252,47 @@ def run_pe(asd_files, label, outdir, informed_priors=None):
     
     return result, runtime
 def create_informed_priors(posterior_result):
-    """Create informed priors from posterior with LALSimulation safety limits."""
-    print("\n" + "*"*50)
-    print("VERIFYING INFORMED PRIORS (WITH LAL SAFETY LIMITS)")
-    print("*"*50)
+    """
+    Create informed priors using Truncated Gaussians to avoid Dynesty boundary artifacts.
+    This guarantees valid Importance Re-weighting.
+    """
+    print("\n" + "*"*60)
+    print("CREATING GAUSSIAN INFORMED PRIORS (FIXING THE 8-SIGMA BIAS)")
+    print("*"*60)
     
     informed_priors = bilby.gw.prior.PriorDict()
-    
-    params_to_refine = [
-        'chirp_mass', 'mass_ratio', 'luminosity_distance', 
-        'theta_jn', 'phase', 'geocent_time', 
-        'ra', 'dec', 'psi'
-    ]
-    
     orig_priors = posterior_result.priors
+
+    # We only refine the heavy parameters. Angles/ spins are left to the baseline priors.
+    params_to_refine = ['chirp_mass', 'mass_ratio', 'luminosity_distance', 'geocent_time']
 
     for param in params_to_refine:
         if param in posterior_result.posterior:
             samples = posterior_result.posterior[param].values
-            lower, median, upper = np.percentile(samples, [1, 50, 99])
-            width = (upper - lower)
-            buffer = width * 0.5 
+            
+            # Calculate the Scout's guess
+            mu = np.mean(samples)
+            sigma = np.std(samples)
+            
+            # Widen the sigma (x3) to be safe, ensuring we don't miss the true peak
+            safe_sigma = sigma * 3.0
             
             old_min = orig_priors[param].minimum
             old_max = orig_priors[param].maximum
+
+            # Create a smooth Gaussian that stops exactly at the original baseline boundaries
+            informed_priors[param] = bilby.core.prior.TruncatedGaussian(
+                mu=mu, 
+                sigma=safe_sigma, 
+                minimum=old_min, 
+                maximum=old_max, 
+                name=param
+            )
             
-            new_min = max(lower - buffer, old_min)
-            new_max = min(upper + buffer, old_max)
+            print(f"  Refined {param}: Gaussian(mu={mu:.4f}, sigma={safe_sigma:.4f})")
 
-            # --- LAL SAFETY PATCH ---
-            # Prevents floating point math from causing a C-level crash
-            if param == 'mass_ratio':
-                new_max = min(new_max, 0.999) # Crash happens if q > 1.0
-            elif param == 'theta_jn':
-                new_min = max(new_min, 0.001)
-                new_max = min(new_max, np.pi - 0.001)
-            elif param == 'dec':
-                new_min = max(new_min, -np.pi/2 + 0.001)
-                new_max = min(new_max, np.pi/2 - 0.001)
-
-            # Assign prior based on type
-            if param == 'dec':
-                informed_priors[param] = bilby.core.prior.Cosine(minimum=new_min, maximum=new_max, name=param)
-            elif param == 'theta_jn':
-                informed_priors[param] = bilby.core.prior.Sine(minimum=new_min, maximum=new_max, name=param)
-            else:
-                informed_priors[param] = bilby.core.prior.Uniform(minimum=new_min, maximum=new_max, name=param)
-            
-            print(f"  Refined {param}: {new_min:.2f} to {new_max:.2f}")
-
-    print("*"*50 + "\n")
+    print("*"*60 + "\n")
     return informed_priors
-
 def analyze_results(outdir, times):
     """Analyze and compare results."""
     print("\n" + "="*70)
