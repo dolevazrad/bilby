@@ -173,7 +173,7 @@ def run_pe(asd_files, label, outdir, informed_priors=None, custom_injection_para
     priors['mass_ratio'] = Uniform(0.5, 1.0, name='mass_ratio')
     
     # 2. Extrinsic
-    priors['luminosity_distance'] = Uniform(200, 800, name='luminosity_distance', unit='Mpc')
+    priors['luminosity_distance'] = Uniform(1.0, 10000.0, name='luminosity_distance', unit='Mpc')
     priors['geocent_time'] = Uniform(
         injection_params['geocent_time'] - 0.1,
         injection_params['geocent_time'] + 0.1,
