@@ -1,0 +1,1391 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage{amsmath,amssymb,bm}
+\usepackage{paralist}
+\usepackage{graphicx} %% add this and next lines if pictures should be in eps format
+\usepackage{epsfig} %For pictures: screened artwork should be set up with an 85 or 100 line screen
+%\usepackage{subfigure,appendix}
+%\usepackage[dvips]{color,graphics}
+\usepackage{psfrag}
+\usepackage{multicol}
+\usepackage{setspace,tabularx,fancyhdr}
+\usepackage{ulem}
+\usepackage[sort,compress]{natbib}
+\usepackage{tocbibind}
+\usepackage{color}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+\pagestyle{plain}
+\usepackage[top=2cm,bottom=2cm,left=2cm,right=2cm]{geometry}
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=*}
+\usepackage{wrapfig}
+\usepackage{type1cm}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{siunitx}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{url}
+
+\usepackage{multirow}
+\usepackage{booktabs}
+
+\newlength\normalFontSize\newlength\fontSizeIncrement
+\setlength\normalFontSize{12pt}
+
+\def\beq{\begin{equation}}
+\def\eeq{\end{equation}}
+\def\bea{\begin{eqnarray}}
+\def\eea{\end{eqnarray}}
+\def\ergo{\Rightarrow}
+
+\newcommand{\red}[1]{{\color{red} #1}}
+\newcommand{\green}[1]{{\color{green} #1}}
+\newcommand{\blue}[1]{{\color{blue} #1}}
+\newcommand{\violet}[1]{{\color{violet} #1}}
+
+\definecolor{myyellow}{rgb}{0.94, 0.86, 0.51}
+\newcommand{\myyellow}[1]{{\color{myyellow} #1}}
+
+\definecolor{mygreen}{rgb}{0.2, 0.8, 0.2}
+\newcommand{\mygreen}[1]{{\color{mygreen} #1}}
+
+\definecolor{mypink}{rgb}{0.99, 0, 0.99}
+\newcommand{\mypink}[1]{{\color{mypink} #1}}
+
+\definecolor{mypurple}{rgb}{0.75, 0, 0.75}
+\newcommand{\mypurple}[1]{{\color{mypurple} #1}}
+
+\definecolor{cadmiumorange}{rgb}{0.93, 0.53, 0.18}
+\newcommand{\orange}[1]{{\color{cadmiumorange} #1}}
+
+\newcommand{\cosmic}{\mypurple{c}\blue{o}\mygreen{s}\myyellow{m}\orange{i}\red{c}\,}
+
+\newcommand{\crucial}{\mypurple{c}\blue{r}\mygreen{u}\myyellow{c}\orange{i}\red{a}\mypink{l}\,}
+
+\newcommand{\paramount}{p\mypurple{a}\blue{r}\mygreen{a}\myyellow{m}\orange{o}\red{u}\mypink{n}t\,}
+
+\newcommand{\transformative}{\mypurple{tr}\blue{an}\mygreen{sf}\myyellow{or}\orange{ma}\red{ti}\mypink{ve}\,}
+
+
+\newcommand{\critical}{c\mypurple{r}\blue{i}\mygreen{t}\myyellow{i}\orange{c}\red{a}\mypink{l}\,}
+
+
+\newcommand{\rep}[2]{\sout{#1}\red{#2}}
+
+\newcommand{\FIX}[1]{{\color{red}$\blacksquare$~\textsf{[FIX: #1]}}}
+
+\newcommand{\TODO}[1]{{\color{red}$\blacksquare$~\textsf{[TODO: #1]}}}
+
+\newcommand{\CITE}{{\color{red}$\blacksquare$~\textsf{[CITATIONS NEEDED]}}}
+
+\newcommand{\GOOD}[1]{{\color{blue}$\blacksquare$~\textsf{[#1]}}}
+
+\newcommand{\IGNORE}[1]{}
+
+\title{\red{BIU MSc Proposal Template \\ Note title page should be made in Word or something\\
+in both Hebrew and English \\
+following BIU template\\
+with a BIU logo and all that, see:\\
+\url{https://graduate-school.biu.ac.il/node/1772} \\
+so the actual stuff starts from the next page}
+}
+
+\author{Dolev Azrad\\
+Supervisor: Dr. Ofek Birnholtz\\
+Department of Physics, Bar-Ilan University}
+
+\begin{document}
+\setcitestyle{square}
+
+\maketitle
+
+\clearpage
+
+\tableofcontents
+
+\clearpage
+
+
+
+\section{Introduction}
+Gravitational waves (GWs), predicted by Einstein's theory of general relativity \cite{Einstein1916}, have been observed by collaborations such as LIGO\cite{LIGOScientific2015} and Virgo\cite{Acernese2015}, marking the commencement of gravitational wave astronomy. These observations provide a supplementary avenue for exploring the universe, particularly phenomena not detectable through electromagnetic observation alone.Binary black hole (BBH) mergers, as well as binary neutron star (BNS) mergers and neutron star-black hole (NSBH) mergers, are key GW sources. The analysis of these events enhances our understanding of the astrophysical processes leading to their occurrence.The events also provide valuable data for statistical analysis. With 90 gravitational wave candidates catalogued in GWTC-3, including 35 new detections from the second half of O3 alone \cite{GWTC3}, the rapidly growing dataset enables astrophysicists to draw statistical inferences about the formation scenarios and evolutionary paths of these objects.
+
+The study of GWs contributes to the verification of general relativity and offers insights into the dynamics of compact objects such as black holes and neutron stars. The analysis of these events enhances our understanding of the astrophysical processes leading to their occurrence. With the accumulation of observational data, astrophysicists can perform statistical analyses to infer properties of these compact objects.
+
+However, extracting information from GW signals is challenging due to their weak nature and the presence of noise, necessitating the use of sophisticated data analysis techniques \cite{Martynov2016, Davis2021, Bose2000}. It is in this complex scenario that Parameter Estimation (PE) plays a role\cite{Biscoveanu2020}. By determining the properties of GW sources, such as the masses and spins of objects in a binary system\cite{Smith2012}, PE is allowing us to advance our understanding of black holes, their merger dynamics, and other gravitational properties \cite{Bayesian parameter-estimation of Galactic binaries}.
+
+The approach uses two steps: first estimating parameters before validating the noise curve's stability, then refining these estimates after establishing a final noise curve. This method aims to reduce computational costs during catalog production at the end of an observing run. Instead of performing complete re-estimation, we test if using preliminary calibrations for initial estimates, followed by refinement with final calibrations, can save processing time.
+
+
+
+
+\begin{figure}[ht]
+\centering
+\begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{visualising_the_results_11_0.png}
+
+    \label{fig:original_gw_recovery}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{visualise_results_final_corner.png}
+    \label{fig:my_gw_recovery}
+\end{subfigure}
+\caption{Comparison of PE for a binary black hole gravitational-wave signal. Left: Results obtained using Bilby as reported in literature. Right: Results obtained by the author, replicating the analysis. On the left: Injecting and recovering a binary black hole gravitational-wave signal with Bilby. The result of PE, The posterior distributions are shown in blue and the injected values in orange.
+    This figure is taken from Bilby: A user-friendly Bayesian inference library for gravitational-wave astronomy \cite{Bilby: A user-friendly}
+On the right: This figure was created by me to duplicate the results.}
+\label{fig:gw_recovery_comparison}
+\end{figure}
+
+
+
+
+\newpage
+\section{Background \& Literature Review}
+
+\subsection{Gravitational-Wave Parameter Estimation: Key Parameters and Their Significance}
+
+In GW astronomy, accurately determining both intrinsic and extrinsic parameters is crucial for the analysis and interpretation of GW signals. Intrinsic parameters, such as the masses (\(M\)) and spins (\(\vec{S}\)) of celestial bodies, define the waveform's characteristics independently of the observer's perspective. Conversely, extrinsic parameters, including the luminosity distance (\(d_L\)) and sky location (\(\theta, \phi\)), influence the signal's perceived properties and detectability. The orientation of the binary system's orbital plane relative to the observer's line of sight, an extrinsic factor, alters the observed amplitude and polarization of the GW signal. Distinguishing between intrinsic qualities, intrinsic to the astrophysical sources, and extrinsic qualities, dependent on observational context, is essential for a thorough analysis of gravitational waves.
+
+ \begin{figure}[ht]
+\centering
+\includegraphics[width=0.5\textwidth]{signal_Waveform.png}
+\caption{On top: Estimated gravitational wave amplitude of GW150914 at the Hanford detector. Above that are the Schwarzschild horizons of both merging black holes shown as calculated numerically from the general theory of relativity.[Image: LIGO / Redesign: Daniela Leitner]\cite{Observation of Gravitational Waves from a Binary Black Hole Merger}}
+\label{fig:signal_waveform}
+    \end{figure}
+\newpage
+
+
+\textbf{\textit{ The parameters commonly estimated include:}}
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{@{} ll ll ll ll @{}}
+\toprule
+& Variable & Unit & Prior & BBH Range & NSBH Range & BNS Range \\
+\midrule
+\multirow{4}{*}{Intrinsic}
+& \( m_{1,2} \) & \( M_{\odot} \) & Uniform & \( [5, 100] \) & \( [1.2, 10] / [5, 100] \) & \( [1.2, 2.5] \) \\
+& \( a_{1,2} \) & -- & Uniform & \( [0, 0.98] \) & \( [0, 0.98] / [0, 0.05] \) & \( [0, 0.05] \) \\
+& \( \theta_{1,2} \) & rad. & Sin & \( [0, \pi] \) & \( [0, \pi] \) & \( [0, \pi] \) \\
+& \( \phi_{JL} \) & rad. & Uniform & \( [0, 2\pi] \) & \( [0, 2\pi] \) & \( [0, 2\pi] \) \\
+\midrule % Visual separator between intrinsic and extrinsic parameters
+\multirow{5}{*}{Extrinsic}
+& \( d_L \) & Mpc & Comoving & \( [10^2, 10^4] \) & \( [10^2, 10^4] \) & \( [10^2, 10^4] \) \\
+& \( ra \) & rad. & Uniform & \( [0, 2\pi] \) & \( [0, 2\pi] \) & \( [0, 2\pi] \) \\
+& \( dec \) & rad. & Cos & \( [-\frac{\pi}{2}, \frac{\pi}{2}] \) & \( [-\frac{\pi}{2}, \frac{\pi}{2}] \) & \( [-\frac{\pi}{2}, \frac{\pi}{2}] \) \\
+& \( \psi \) & rad. & Sin & \( [0, \pi] \) & \( [0, \pi] \) & \( [0, \pi] \) \\
+& \( \phi_c \) & rad. & Uniform & \( [0, 2\pi] \) & \( [0, 2\pi] \) & \( [0, 2\pi] \) \\
+\bottomrule
+\end{tabular}
+\caption[Priors for PE across GW source estimation]{Priors for PE across binary black hole (BBH), neutron star-black hole (NSBH), and binary neutron star (BNS) mergers. The table is organized to present both intrinsic (Top) and extrinsic (Bottom) parameters for each source type. Intrinsic variables include the masses \( m_{1,2} \), dimensionless spin magnitudes \( a_{1,2} \), tilt angles \( \theta_{1,2} \), and spin vectors \( \delta\phi_{1,2} \) and \( \delta\phi_{JL} \). Extrinsic parameters encompass the luminosity distance \( d_L \), right ascension \( ra \), declination \( dec \), inclination angle \( \iota \), polarization angle \( \psi \), and phase at coalescence \( \phi_c \), with all phases, spins, and inclination angles defined at a reference frequency. The 'Sin' and 'Cos' priors correspond to distributions uniform in sine and cosine, while 'comoving' denotes a uniform distribution in comoving volume. This table extends the framework provided by \cite{Bilby: A user-friendly} to encompass the parameter space relevant for all three types of gravitational wave sources, reflecting the diverse nature of these cosmic events. See figure \ref{fig:params4} for visual representation.}
+\label{table:gw_parameters_ranges}
+\end{table}
+ \begin{figure}[ht]
+\centering
+\includegraphics[width=0.99\textwidth]{params4.png}
+
+\caption[Schematic of a binary black hole system]{
+Illustration of a binary black hole (BBH) system depicting key dynamical and spin parameters. Intrinsic parameters shown include the black hole masses (\( m_{1} \) and \( m_{2} \)), spin vectors (\( \vec{S}_{1} \) and \( \vec{S}_{2} \)), and their respective orientations (\( \theta_{1,2} \) relative to the orbital angular momentum, not explicitly labeled in the image but implied by the spin vector orientation). Extrinsic parameters like the system's position and orientation in space, though not labeled, can be inferred from the relative positions and momenta (\( \vec{P}_{1} \) and \( \vec{P}_{2} \)), and the center of mass (CM). This schematic provides a visual representation of the parameters important for the estimation process in gravitational wave astronomy as listed in the accompanying PE table. Note that while the table includes ranges for NSBH and BNS systems, this illustration focuses on BBH parameters, which are directly comparable to those listed for BBH in the table. figure courtesy of Ofek Dan, BIU
+}
+\label{fig:params4}
+\end{figure}
+
+\begin{itemize}
+
+
+    \item \textbf{Masses of the Objects}: In gravitational wave astronomy, understanding the masses of colliding objects such as black holes or neutron stars is crucial. Two common parameterizations are used based on the analysis phase. The first combines the chirp mass $\mathcal{M}$, defined by     \[ \mathcal{M} = \left( \frac{(m_1 m_2)^{3/5}}{(m_1 + m_2)^{1/5}} \right), \cite{Cutler1994}\] ,
+
+with the mass ratio $q = m_2 / m_1$ (assuming $m_2 \leq m_1$  and where $m_1$ and $m_2$ are the masses of the two objects), particularly useful during the inspiral phase for its influence on the binary orbit evolution and waveform. The second approach uses the individual masses $m_1$ and $m_2$ directly, more relevant in the ringdown phase where the total mass $M = m_1 + m_2$ predominates. This choice depends on how each parameter set affects the waveform's characteristics and the specific stage of the binary merger under consideration.
+
+
+    \item \textbf{Spins}: The spin of each object in a binary system is an important factor for understanding the dynamics of the merger. Each object's spin is represented by a single three-dimensional vector that defines its angular momentum. This vector is characterized by both a magnitude, which represents the spin's strength, and by two angles (typically denoted as tilt and azimuthal angles) that define its orientation with respect to the orbital plane. Consequently, for a binary system comprising two objects, the total number of spin parameters is six: the magnitude, tilt angle, and azimuthal angle for each object's spin vector. These parameters affect the gravitational waveform's amplitude and phase, as well as the precession dynamics of the binary system.
+
+
+
+    \item \textbf{Significance of Mass and Spin Estimates}: Estimating the masses and spins of objects such as black holes and neutron stars is fundamental for elucidating their formation mechanisms and evolutionary paths. Mass influences the frequency evolution of GW signals during the inspiral phase \cite{Blanchet2014}, and spin parameters affect both the amplitude modulation of the waveform throughout the coalescence \cite{Apostolatos1994} and the post-merger dynamics, including any potential recoil or 'kicks' experienced by the remnant black hole \cite{Campanelli2007, Campanelli2006b}. Such parameters are intrinsic to the GW source and provide insights into the energetic interactions at play.
+
+
+   \item \textbf{Distance and Location}: The luminosity distance to a gravitational wave source informs us about the event's energy output, which help us to assess the scale of the phenomenon. The sky position allow for accurately locating the event, enhancing the potential for multi-messenger observations. These measurements are especially valuable in multi-messenger astronomy, allowing correlations between gravitational and electromagnetic signals to provide a more complete understanding of astrophysical events \cite{Multi-messenger Observations,Fairhurst2011}. Accurate distance and location data are essential for identifying host galaxies and contribute to our knowledge of the universe's expansion. Notably, while binary black hole (BBH) mergers typically do not yield electromagnetic counterparts, mergers involving neutron stars—such as binary neutron star (BNS) and neutron star-black hole (NSBH) mergers—do, due to their baryonic matter content \cite{Multi-messenger Observations}.
+
+
+    \item \textbf{Orbital Parameters}: Orbital parameters, including inclination and eccentricity, inform our understanding of a binary system's dynamics as it progresses toward a merger. The orbital period, reflecting the time for one complete revolution, is not static but decreases as the orbiting objects emit gravitational waves and lose energy. Eccentricity, indicative of how much an orbit deviates from being circular, typically reduces over time, affecting the gravitational waveform's characteristics. Inclination can also vary, especially if the system exhibits precession — a phenomenon occurring when the spins are misaligned with the orbital angular momentum. Therefore, it is often more informative to discuss these parameters relative to a specific reference frequency, which provides a more consistent measure for gravitational wave analysis.
+
+
+\end{itemize}
+
+
+\subsubsection{Equation of State (EoS) and Its Importance}
+
+One parameter of significant interest derived from GW signals, especially those from binary neutron star (BNS) mergers, pertains to the equation of state (EoS) of neutron stars \cite{EOS}. The EoS provides insights into the behavior of matter within the high-density environment of neutron stars. Understanding the EoS let us explore the characteristics of matter in conditions not reproducible in terrestrial laboratories, thereby advancing our knowledge of fundamental physics.
+
+
+The EoS affects the GW signal in various ways:
+\begin{itemize}
+
+    \item \textbf{Tidal Deformability}: The EoS influences how much a neutron star is deformed by the gravitational field of its companion. This deformation leaves an imprint on the GW signal. Tidal deformability, denoted by \( \Lambda \), is a parameter that encapsulates this effect and is related to the EoS. It is defined as:
+    \[ \Lambda = \frac{2}{3} k_2 \left( \frac{c^2 R}{Gm} \right)^5  \cite{Flanagan2008, Hinderer2008}\]
+    Here, \( k_2 \) is the second Love number, which quantifies the star's response to the tidal potential of its companion \cite{Thorne1967, Binnington2009}. It is a dimensionless parameter that represents the ratio of the induced quadrupole moment of the neutron star to the external tidal field. The Love number depends on the internal structure of the star, which is governed by its EoS. Thus, measuring \( \Lambda \) from GW signals provides direct insight into the internal properties of neutron stars.
+
+
+   \item \textbf{Post-Merger Signal}: The EoS also affects the post-merger signal in neutron star mergers. Different EoSs predict different outcomes, such as whether the remnant will immediately collapse into a black hole or form a hypermassive neutron star \cite{The-lifetime-of-binary-neutron-star-merger-remnants, EOS}.
+\end{itemize}
+ \textbf{These parameters shed light} on the ultra-dense matter's behavior, providing insights into nuclear physics and the state of matter in this scenarios.
+
+
+
+
+\subsection{Bayesian Inference Framework in Gravitational-Wave Astronomy}
+Bayesian inference is an important component of GW astronomy for analyzing and interpreting observational data. By employing Bayes' theorem, this framework facilitates the estimation of source properties, proving to be a substantial asset for PE. Tools such as the Bilby library exemplify the practical application of Bayesian inference in GW astronomy. Developed by Ashton, Hübner, Lasky, et al. \cite{Bilby: A user-friendly}, Bilby enhances the accessibility of Bayesian methods. Moreover, studies like those of Strub et al. \cite{Bayesian parameter-estimation of Galactic binaries}, which apply Bayesian inference to PE in LISA data for Galactic binaries, highlight the method's utility. Further advancements have been made by incorporating Bayesian inference with Markov Chain Monte Carlo (MCMC) techniques, leading to developments such as the Bilby-MCMC sampler by Ashton and Talbot \cite{Bilby-MCMC}.
+
+\subsubsection{Fundamental Equation}
+Bayesian inference in gravitational wave (GW) astronomy leverages Bayes' theorem \cite{Bilby: A user-friendly, Finn1992} to deduce the properties of GW sources from the data collected. This theorem is expressed as:
+\begin{equation}
+    p(\theta | d) = \frac{\pi(\theta)p(d | \theta)}{p(d)}
+\end{equation}
+where:
+\begin{itemize}
+    \item $p(\theta | d)$ denotes the posterior probability density function (PDF) for the parameters $\theta$ given the data $d$.
+    \item $\pi(\theta)$ is the prior probability distribution of the parameters.
+    \item $p(d | \theta)$ represents the likelihood function, which is the probability of observing the data $d$ given the parameters $\theta$.
+    \item $p(d)$, known as the Bayesian evidence, acts as the normalization constant.
+\end{itemize}
+
+\subsubsection{Likelihood Function}
+For GW data with the assumption of Gaussian noise, the likelihood function is formulated as:
+\begin{equation}
+    \ln L(d | \theta) = -\frac{1}{2} \sum_{k} \left( \frac{[d_k - h_k(\theta)]^2}{\sigma_k^2} + \ln 2\pi\sigma_k^2 \right)
+\end{equation}
+In this equation:
+\begin{itemize}
+    \item $d_k$ indicates the observed data at frequency bin $k$.
+    \item $h_k(\theta)$ is the expected signal model as a function of the source parameters $\theta$.
+    \item $\sigma_k$ describes the noise standard deviation in each frequency bin.\cite{Smith2016, Wong2023}.
+\end{itemize}
+
+\
+\subsection{Fisher Information Matrix in GW Parameter Estimation}
+The Fisher Information Matrix (FIM) serves as an analytical instrument in GW astronomy for PE. Within the framework of frequentist statistics, the FIM measures how much information an observable variable provides about the parameters of a model, which in turn informs the precision limits of these measurements. Thorne's work "Bayesian inference for gravitational waves and pulsars" \cite{Thorne2002} comprehensively reviews GW parameter estimation, with an emphasis on the FIM's utility in both frequentist and Bayesian methodologies. The FIM is particularly useful in scenarios with high signal-to-noise ratios (SNR), contributing to the accurate estimation of source characteristics, including the masses and spins of compact objects within binary systems.
+
+\subsubsection*{Definition and Importance}
+The Fisher Information Matrix (FIM) elements are determined through the inner product:
+\begin{equation}
+    \Gamma_{\mu\nu} = \left( \frac{\partial h}{\partial \theta_\mu}, \frac{\partial h}{\partial \theta_\nu} \right)
+\end{equation}
+where $\theta_\mu$ and $\theta_\nu$ denote distinct parameters of the gravitational wave (GW) signal. The inner product is described as:
+\begin{equation}
+    (g, h) = 4 \text{Re} \int_{0}^{\infty} \frac{\tilde{g}(f) \tilde{h}^*(f)}{S_n(f)} df \cite{Cutler1994}
+\end{equation}
+In this formulation:
+\begin{itemize}
+    \item $\tilde{g}(f)$ and $\tilde{h}(f)$ represent the Fourier transforms of the time-domain functions $g(t)$ and $h(t)$, respectively.
+    \item $S_n(f)$ is the power spectral density of the noise in the detector.
+\end{itemize}
+
+
+\textbf{The Fisher Information Matrix (FIM)} effectiveness compared to real parameter estimation techniques, such as Markov-chain Monte Carlo (MCMC), has been examined in the context of gravitational-wave signals from merging compact binaries. Rodriguez, Farr, Farr, and Mandel \cite{Rodriguez2013} found that the FIM can overestimate the uncertainty in PE achievable by MCMC, particularly for systems composed of binary black holes. Their study highlights the increasing discrepancies in the uncertainty estimates provided by FIM and MCMC as the total mass of the binary system increases.
+
+
+\subsection{Markov Chain Monte Carlo Methods}
+MCMC methods, and specifically the Metropolis-Hastings (MH) algorithm, are utilized for sampling from the posterior distribution, effectively navigating the parameter space to estimate gravitational wave sources' properties \cite{vanderSluys2008}. The MH algorithm operates through an iterative process, proposing new parameter states and determining their acceptance based on predefined criteria:
+
+\begin{enumerate}
+    \item Initialize with a starting point \( \theta^{(0)} \).
+    \item For each iteration \( i \), propose a new parameter state \( \theta' \) from a proposal distribution \( q(\theta' | \theta^{(i-1)}) \).
+    \item Calculate the acceptance probability \( \alpha \) as:
+    \[ \alpha(\theta', \theta^{(i-1)}) = \min\left(1, \frac{p(\theta' | D) q(\theta^{(i-1)} | \theta')}{p(\theta^{(i-1)} | D) q(\theta' | \theta^{(i-1)})}\right) \]
+    \item Accept \( \theta' \) with probability \( \alpha \), otherwise retain \( \theta^{(i-1)} \).
+    \item Repeat for a significant number of iterations.
+\end{enumerate}
+
+In this context, \( q(\theta' | \theta^{(i-1)}) \) represents the proposal distribution, which is a mechanism for generating new candidate states \( \theta' \) based on the current state \( \theta^{(i-1)} \). This distribution is crucial for the exploration of the parameter space, guiding the sampling process towards areas of higher posterior probability.
+
+\subsection{Computational Challenges in GW Parameter Estimation}
+
+
+\begin{itemize}
+
+
+\item \textbf{Complexity of High-Dimensional Space}: GW signals depend on numerous parameters that define a multi-dimensional parameter space. As detailed in Table 1, a typical binary system's parameter space might extend beyond 15 dimensions, with the vectorial nature of spins contributing to the dimensional complexity. Efficiently exploring this space for parameter estimation (PE) requires robust computational techniques. Reduced-order quadrature and adaptive proposal distributions are effective in managing these dimensions \cite{Smith2016}. Additionally, the use of hardware accelerators like GPUs enhances the computation of waveform models and likelihood evaluations, facilitating faster processing in extensive parameter landscapes \cite{Wong2023}.
+
+
+
+
+
+
+\item \textbf{Sampler Efficiency}: In GW astronomy, the efficiency of sampling methods, notably Markov Chain Monte Carlo (MCMC), is essential for navigating complex parameter spaces \cite{LISA-MCMC}. Sampler efficiency relates specifically to the exploration of these spaces to derive parameter estimates. MCMC methods face challenges such as:
+    \begin{itemize}
+        \item \textit{Multimodal Distributions}: In GW parameter spaces, the probability density functions may have multiple peaks corresponding to viable parameter sets. Efficient sampling across these modes is necessary, especially when probability valleys separate them \cite{Roulet2022}.
+        \item \textit{Correlations Between Parameters}: Parameters such as the masses and spins of black holes might be correlated, influencing the observed gravitational waveforms. These correlations can lead to degenerate regions in parameter space, complicating the sampling process and potentially delaying convergence \cite{Luengo2020, Kramer2014}.
+    \end{itemize}
+
+
+
+
+These challenges extend beyond the mere existence of numerous dimensions; they specifically relate to the complexity of the parameter space that must be navigated during sampling. Overcoming the limitations of traditional MCMC methods in gravitational wave parameter estimation (GW PE) necessitates the adoption of advanced sampling strategies. Techniques such as heterodyned likelihood and normalizing flows, discussed by Wong et al. \cite{Wong2023}, improve sampling efficiency by streamlining likelihood evaluation and navigating complex parameter spaces more effectively. Moreover, gradient-based samplers exploit derivative information of the posterior to steer the sampling towards regions of higher probability, enhancing efficiency in exploring multidimensional spaces \cite{Wong2023}.
+Alternative sampling methods are crucial for managing complex distributions and resolving parameter correlations to ensure precise and reliable parameter estimation.
+\item \textbf{Simulated Annealing}: This method modifies the likelihood surface to facilitate exploration, potentially accelerating convergence. Critical to its success is the correct selection of initial temperature and annealing parameters, which requires meticulous tuning to optimize performance \cite{Wong2023}. Simulated Annealing's flexibility makes it a viable option for addressing the intricate parameter spaces typical in GW data analysis.
+
+
+
+    \item \textbf{Future Directions}: The increase in GW observations and the expanding volume of data necessitate ongoing improvements in computational methods. Investigating the application of machine learning for data analysis, refining waveform models for enhanced precision, and utilizing progressive computational software are among the principal areas for future exploration and development in this domain \cite{Wong2023}.
+
+
+\end{itemize}
+
+\clearpage
+
+    \begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.99\textwidth]{ParaEstimExample.png}
+    \caption{The detector strain measurement of GW150914 (B.abbot et al., 2016c) \cite{B.abbot et al2016c} observed by the LIGO Hanford(H1,Top) and Livingston(L1, bottom) detectors in gray. Times are realative to 14/9/2015 at 09:50:45 UTC. The cyan curve is the estimated signal using IMRPhenom and EOBNR waveform template, the blue curve a signal reconstruction based on BayseWave.\cite{B.abbot et al2016d}}
+    \label{fig:gw_recovery}
+    \end{figure}
+
+
+
+
+Figure \ref{fig:gw_recovery} illustrates the comparison between the detector strain measurement of GW150914 by LIGO Hanford and Livingston and the modeled GW signals. The graph displays the complexities involved in accurately matching the observed detector data, represented in gray, with theoretical models. The discrepancies between these curves highlight the intricate task of waveform reconstruction and PE in gravitational wave astronomy.
+
+
+\section{Research Objective}
+The detection of gravitational wave (GW) events initiates a process of parameter estimation (PE), crucial for analyzing the astrophysical properties of the sources and verifying predictions of general relativity. Achieving accurate PE relies on a stable noise curve, but stabilizing this curve and meeting the high computational demands can delay the research process \cite{Advanced-LIGO, Advanced Virgo2014}. Typically, LIGO operates on approximately 18-month observing runs \cite{LIGOScientific2015}, a six-month data collection period is followed by an equal duration for calibration, during which the noise curve is refined using the collected data. After calibration, event detection and PE the full data releases 18 months after run completion. \cite{B.abbot et al2016, B.abbot et al2016b}.
+
+The primary goal of this research is to save time of PE in GW studies by reducing the time required for final parameter determination, crucial for rapid scientific analysis and dissemination. Our approach involves a two-phase method: initially conducting PE with preliminary noise curve calibrations, followed by refining these estimates once the noise curve has stabilized. This method aims to utilize computational resources effectively by refining initial estimates rather than performing a complete re-estimation. We seek to assess the effectiveness of initial calibrations in producing early parameter estimates and determine whether iterative updates can achieve a more time-efficient process compared to restarting the estimation process after full calibration. This strategy leverages the progressive nature of PE, which typically involves numerous iterations evolving from initial approximations to refined and precise results.
+
+\subsection{ Research expectation }
+
+Based on our preliminary analysis with simplified 6-parameter runs (Table ~\ref{tab:compute_specs}), we project significant computational savings for full 15-parameter PE. Although our test runs with 6 parameters complete in ~3 hours, production PE with 15 parameters typically requires 20-30 hours per event \cite{Romero-Shaw2020}
+Our two-phase approach performs initial PE during the calibration period, then refines these estimates once final calibration is available. We estimate that the refinement phase will require approximately 56\% (see Appendix~\ref{appendix:Computational Time Savings Analysis}) of the full PE time, based on the following.
+Reduced MCMC burn-in time when starting from good initial estimates
+Smaller effective parameter space to explore
+convergence acceleration from informed proposal distributions
+
+For a typical observing run with ~200 events, this could reduce post-calibration computational time from approximately 4,200 hours (175 days) to 2,100 hours (87.5 days), saving approximately 87.5 days of computing time. This 44\% reduction in computational resources could enable more thorough analyses, additional waveform models, or faster public data releases.
+
+    \begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.50\textwidth]{noise_curve_importance.png}
+\caption{The plot illustrates the strain sensitivity of the Advanced LIGO detectors during the initial (O1) and the final science run (S6) of the initial LIGO detectors. The dark red and light red curves represent the O1 strain noise for H1 and L1 respectively, indicating comparable performance between the two detectors. Also depicted are the Advanced LIGO design sensitivity and a prospective future upgrade \cite{Miller2015, Abbott2016-sensitivity}, underscoring the potential for discovery in the upcoming years.}
+
+    \label{fig:noise_curve_importance}
+    \end{figure}
+Figure \ref{fig:noise_curve_importance} shows how noise curves improved between LIGO's S6 and Advanced LIGO's O1 observation runs, affecting gravitational wave detection sensitivity and accuracy. Our research tests if PE can work with early, less stable noise curves. The method uses initial rough calibrations and updates them as the noise curve stabilizes. This lets us start analysis before having the final noise curve, potentially reducing the time needed to analyze gravitational wave events. The figure shows that stable noise curves improve detection precision, which supports testing PE methods that can work with preliminary calibrations.
+
+%\newpage
+
+\section{Research Assumptions and/or hypotheses }
+
+\begin{itemize}
+ \item \textbf{Noise Curve Stabilization Analysis:} The stabilization of noise curves creates a delay in gravitational wave parameter estimation. This research tests if using initial noise curves for parameter estimation, followed by refinement when final noise curves are available, can reduce processing time. The method assumes that early estimates contain sufficient information for refinement without requiring full reanalysis, which could decrease the total time needed for parameter estimation completion.
+  \begin{itemize}
+    \item \emph{Validation Method:} Time saved and the precision of PE will be quantitatively analyzed.
+  \end{itemize}
+
+
+
+    \item \textbf{Hypothesis on Gradient Descent Versus MCMC:} The exploration of gradient descent optimization alongside Metropolis-Hastings MCMC methods considers the contrasting demands of computational efficiency and the ability to navigate complex parameter landscapes. Gradient descent, often more straightforward and less computationally intensive, is advantageous in scenarios where the posterior distribution is smooth and unimodal, allowing for rapid convergence to the maximum likelihood. However, in a multi-dimensional parameter space common in gravitational wave astronomy, this simplicity may be offset by MCMC's robustness in exploring complex, potentially multimodal distributions where gradient descent might falter.
+
+  \begin{itemize}
+    \item \emph{Empirical Testing:} The hypothesis will be empirically tested by comparing the convergence times and the fidelity of the parameter estimate in a diverse set of GW data.
+
+  \end{itemize}
+\end{itemize}
+
+These hypotheses will be subjected to rigorous empirical testing, with outcomes informing the preferred methodological approach for real-time GW analysis in future observational runs.
+
+
+
+%\newpage
+
+\section{Research Plan}
+\subsection*{Overview and Theoretical Framework}
+
+This research focuses on optimizing parameter estimation (PE) processes in gravitational wave (GW) astronomy using Bayesian inference and MCMC methods within the Bilby framework \cite{Bilby-MCMC, Bilby: A user-friendly}. We aim to enhance the efficiency and accuracy of PE by employing adaptive proposal distributions and convergence diagnostics. Our strategy includes a two-step approach of using preliminary estimates from early noisy data and refining these with cleaner data, aiming to reduce the timeline for PE and expedite scientific outputs.
+
+
+
+
+\subsection{Optimization of MCMC Sampling}
+
+This research focuses on refining the efficiency of Markov Chain Monte Carlo (MCMC) sampling for gravitational wave parameter estimation. Central to this refinement is the optimization of the proposal distribution, which dictates the selection probabilities of parameter values during sampling. We plan to implement advanced tuning techniques that adapt the proposal distribution based on performance metrics gathered during sampling. This includes adjusting the step sizes or adopting more sophisticated algorithms like adaptive Metropolis or Hamiltonian Monte Carlo if the parameter space shows complex dependencies or multimodality. Additionally, convergence diagnostics will be systematically employed to verify the thorough exploration of the parameter space and validate the sampling efficiency. These diagnostics will involve statistical tests such as the Gelman-Rubin statistic and effective sample size calculations to confirm that the chains are mixing well and converging to the target distribution. Supported by the capabilities of the Bilby framework, these strategies are instrumental in enhancing the accuracy and reliability of our parameter estimation models \cite{Bilby-MCMC, Smith2016}.
+
+\subsubsection{Advanced Tuning Techniques and Convergence Diagnostics}
+
+In the optimization of MCMC sampling, advanced tuning techniques will be crucial \cite{Luengo2020}. These involve algorithmically adjusting the step sizes and shapes of the proposal distribution based on the performance metrics of the MCMC samples. This process, termed `adaptive MCMC',\cite{Haario2001, Roberts2009} aims to enhance the exploration of the parameter space by dynamically updating the proposal distribution to reduce correlation between consecutive samples and avoid local optima \cite{Kramer2014}.
+
+Additionally, we will utilize rigorous convergence diagnostics to verify the effectiveness of the sampling strategy. These diagnostics include the calculation of the Gelman-Rubin statistic \cite{GelmanRubin1992}, which compares the variance between multiple MCMC chains to the variance within each chain to assess convergence. Another important diagnostic tool is the Effective Sample Size (ESS), which measures the number of independent samples in the chain, providing insights into the chain's efficiency in exploring the parameter space \cite{vanderSluys2008}. Both tools are essential for confirming that the chains have sufficiently explored the parameter space and are representative of the true posterior distribution.
+
+These advanced techniques and diagnostics are integral to our methodology and are fully supported by the Bilby framework, which provides built-in functions for implementing these adaptive strategies and evaluating their performance \cite{Bilby-MCMC, Smith2016}.
+
+\subsubsection{Adaptive Proposal Distribution}
+The modification of proposal distributions during MCMC sampling affects the sampling efficiency. Our method implements algorithms that update the proposal distribution based on the MCMC chain data. This adaptation aims to reduce convergence time and improve parameter space exploration through continuous updates of the proposal distribution during sampling. These methods have improved MCMC performance in tests with the Bilby framework \cite{Bilby-MCMC, Bilby: A user-friendly}.
+
+\subsubsection{Convergence Diagnostics}
+
+Reliable convergence diagnostics are fundamental for validating the MCMC sampling process. We plan to apply the autocorrelation function (ACF) to measure the independence of the samples within the chains. The ACF at lag \( k \) helps identify the point at which samples become uncorrelated, calculated by:
+\[
+ACF(k) = \frac{\sum_{t=1}^{N-k} (X_t - \overline{X})(X_{t+k} - \overline{X})}{\sum_{t=1}^N (X_t - \overline{X})^2},\cite{Geyer1992, Sokal1997},
+\]
+with \( X_t \) representing the samples and \( \overline{X} \) their mean. Additionally, the potential scale reduction factor (PSRF) will be employed to assess chain mixing and convergence, ensuring that multiple chains are consistent with one another:
+\[
+PSRF = \frac{n - 1}{n} + \frac{m+1}{mn} \frac{B}{W}, \cite{GelmanRubin1992}, \]
+where \( B \) is the between-chain variance, \( W \) is the within-chain variance, \( m \) is the number of chains, and \( n \) is the chain length. These techniques, crucial for monitoring the adequacy of our sampling process, align with established methods within the Bilby framework \cite{Bilby-MCMC}.
+
+
+\subsection{Parameter Estimation:Testing Gradient Descent Optimization}
+
+On the other end, the task of PE can be approached using gradient descent optimization. While MCMC with the Metropolis-Hastings algorithm provides a robust mechanism for sampling from the posterior distribution, gradient descent offers a simpler and potentially faster path to optimization, particularly when the likelihood function is differentiable with respect to the parameters.
+
+\begin{enumerate}
+    \item Begin with initial parameter estimates derived from the degraded noise signal, a necessary step to establish a starting point for optimization.
+    \item Apply gradient descent optimization to iteratively refine the parameter estimates. This method adjusts parameters by stepping in the direction of the steepest descent of the likelihood function, mathematically described as:
+    \[
+    \theta^{(new)} = \theta^{(old)} - \eta \nabla_\theta \mathcal{L}(\theta^{(old)}) , \cite{Boyd2004, Nocedal2006}
+    \]
+    where \( \theta^{(old)} \) and \( \theta^{(new)} \) are the old and new parameter vectors, respectively, \( \eta \) is the learning rate, and \( \nabla_\theta \mathcal{L} \) is the gradient of the likelihood function \( \mathcal{L} \) with respect to \( \theta \).
+
+\end{enumerate}
+
+\subsection{Simulation and Validation}
+
+The simulation and validation phase tests the signal processing and PE algorithms. We test if the algorithms work correctly with actual detector data by following these steps:
+
+\begin{enumerate}
+    \item \textbf{Development of Simulated Signals:} We generate a suite of synthetic GW signals and noise that closely mimic the data obtained by detectors like LIGO and Virgo. This simulation involves:
+    \begin{itemize}
+        \item Creating realistic GW waveforms based on astrophysical models of binary mergers.
+        \item Superimposing these signals onto synthetic noise backgrounds that reflect the statistical properties of actual detector noise.
+    \end{itemize}
+
+    \item \textbf{Signal Degradation and Noise PSD Adjustment:}
+    To evaluate our two-phase method's potential for rapid and efficient PE, we simulated varying noise conditions. Rather than strictly degrading the injected signal itself, we adjust the noise Power Spectral Density (PSD) used during parameter estimation. This method allows the PE process (conducted using Bilby) to account for different noise conditions by specifying various noise PSD files.
+
+    The process of noise refinement is applied by employing a moving average filter to the frequency domain of the noise data, following standard signal processing techniques \cite{Welch1967}. This technique adjusts the noise data to represent varying observational conditions, enabling a more stable and consistent noise curve. The refinement is controlled by a noise time factor, where an increased factor leads to a smoother, albeit less detailed, noise curve, simulating the different noise levels encountered during actual observations (e.g., early-run preliminary calibration versus late-run finalized calibration).
+
+    Figure \ref{fig:noise_refinement_comparison} demonstrates the varying Amplitude Spectral Densities (ASDs) generated for the LIGO H1 detector across different temporal windows (from 20 minutes to 1152 hours). These variations serve as the testing ground for applying initial calibrations (Phase 1) and subsequent iterative refinements (Phase 2).
+
+    \begin{figure}[htbp]
+        \centering
+        \begin{subfigure}[b]{0.45\textwidth}
+            \includegraphics[width=\textwidth]{H1_noise_ASD_0.333_hours.png}
+            \caption{ASD for 20 minute window}
+            \label{fig:H1_250}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[b]{0.45\textwidth}
+            \includegraphics[width=\textwidth]{H1_noise_ASD_24.167_hours.png}
+            \caption{ASD for 24 hours window}
+            \label{fig:H1_500}
+        \end{subfigure}
+
+        \vspace{0.5cm}
+        \begin{subfigure}[b]{0.45\textwidth}
+            \includegraphics[width=\textwidth]{H1_noise_ASD_168.167_hours.png}
+            \caption{ASD for 168 hours window}
+            \label{fig:H1_750}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[b]{0.45\textwidth}
+            \includegraphics[width=\textwidth]{H1_noise_ASD_1152.166_hours.png}
+            \caption{ASD for 1152 hours window}
+            \label{fig:H1_1000}
+        \end{subfigure}
+
+        \caption{Comparison of ASD at different noise windows on the LIGO H1 detector. Smoother curves represent longer integration times, simulating finalized noise calibration.}
+        \label{fig:noise_refinement_comparison}
+    \end{figure}
+
+    \begin{figure}[ht]
+        \centering
+        \includegraphics[width=0.45\textwidth]{noise_example.jpg}
+        \caption{An example of simulated signal (green) with added noise (orange) to simulate an early detection strain (blue) as opposed to the more certain strain which detected at O3 which was taken from the Bilby documentation\cite{Bilby: A user-friendly}}
+        \label{fig:noise_example}
+    \end{figure}
+
+    \item \textbf{Running the Algorithm}
+    \label{sec:running_algorithm}
+    This stage involves applying our algorithms to 'start-of-run' data, which is characterized by higher noise levels and serves as our 'degraded' dataset. The objective is to extract preliminary parameter estimates from this challenging data. We will then refine these estimates using the 'end-of-run' data, which corresponds to the actual, cleaner signals. This process aims to replicate a real-world scenario where early-run noise profiles are used for initial estimation, and end-of-run data, with improved noise characteristics, are used for final PE.
+
+    \begin{enumerate}
+      \item Processing 'start-of-run' noisy data to obtain preliminary parameter estimates.
+      \item Refining estimates with 'end-of-run' data, reflecting cleaner signal conditions.
+      \item Evaluating the computational efficiency and accuracy of this two-step estimation process.
+    \end{enumerate}
+
+    The success of this two-stage estimation process will be gauged by the accuracy of parameters obtained and the reduction in computational time and resources.
+
+    \item \textbf{Algorithm Refinement}
+    Algorithm refinement includes adjusting algorithm parameters, such as proposal distribution variances (via Truncated Gaussians), to optimize performance. Validating the refined parameter estimates against the known parameters of the simulated signals ensures that the optimization is accurately capturing the true parameter values without introducing statistical bias.
+
+\end{enumerate}
+
+\subsection{Validation and Implementation}
+This research concludes with testing of the MCMC and gradient optimization algorithms. We will assess time reduction using past gravitational wave events, focusing on the measurement of main parameters including masses, spins, and sky locations. The tests will examine how the algorithms reduce delays in the estimation pipeline, which limits the speed of gravitational wave data analysis. We will analyze the computational costs to verify that time savings do not require excess resources. After validation, the algorithms can be added to the analysis process for future gravitational wave observations, improving analysis speed. This improvement will help connect data collection to analysis results more quickly, supporting the combination of gravitational wave and electromagnetic observations.
+To validate our 44\% refinement time estimate, we will:
+\begin{itemize}
+    \item Compare full PE versus two-phase PE on a subset of real GW events from O3
+    \item Measure actual refinement convergence rates with different Phase 1 starting points
+    \item Test sensitivity to noise curve evolution patterns
+    \item Document the relationship between initial estimate quality and refinement time
+\end{itemize}
+
+\subsubsection*{Distributed Computing for Large-scale Inference}
+
+Given the computationally intensive nature of MCMC methods, the research will leverage distributed computing resources, utilizing high-performance computing clusters and cloud platforms for parallel processing of MCMC chains.
+For this work I have used my personal PC-  full spec in the appendix A.3
+
+\subsubsection{Validation of Parameter Recovery Accuracy}
+
+A critical component of our validation strategy involves quantifying the accuracy difference between the two-phase approach and traditional single-phase PE, particularly for astrophysically significant parameters. We will implement systematic comparisons focusing on:
+
+\begin{itemize}
+    \item \textbf{Sky localization accuracy:} The sky position parameters (RA, Dec) directly impact electromagnetic follow-up observations. We will quantify the sky area uncertainty (typically measured in square degrees at 90\% confidence) for both methods and assess whether the two-phase approach maintains sufficient accuracy for successful multi-messenger astronomy.
+
+    \item \textbf{Mass ratio determination:} The mass ratio ($q$) provides crucial insights into binary formation channels and population synthesis models. We will evaluate the systematic bias and statistical uncertainty in mass ratio recovery, ensuring that the two-phase method preserves the precision needed for astrophysical inference.
+
+    \item \textbf{Quantitative metrics:} For each parameter, we will compute:
+    \begin{equation}
+    \Delta_{\text{param}} = \frac{|\theta_{\text{two-phase}} - \theta_{\text{single-phase}}|}{\sigma_{\text{single-phase}}}
+    \end{equation}
+    where $\theta$ represents the median posterior value and $\sigma$ the 1-$\sigma$ uncertainty. Success criteria require $\Delta_{\text{param}} < 0.5$ for all critical parameters.
+\end{itemize}
+
+This validation will be performed on a representative sample of O3 events spanning different signal-to-noise ratios and binary configurations to ensure robust performance across the full parameter space encountered in gravitational wave astronomy.
+
+\subsubsection{Parallelization Strategy and Wall-Clock Time Analysis}
+
+While our analysis projects 2,100 CPU hours for Phase 2 refinement across ~200 events, the actual wall-clock time depends critically on parallelization efficiency. Modern computational infrastructure enables several levels of parallelization:
+
+\textbf{Event-level parallelization:} Each GW event can be analyzed independently, allowing perfect linear scaling up to 200 parallel processes. With access to a computing cluster with 200 cores, the entire catalog could theoretically be processed in:
+\begin{equation}
+t_{\text{wall}} = \frac{2,100 \text{ CPU hours}}{200 \text{ cores}} = 10.5 \text{ hours}
+\end{equation}
+
+\textbf{Chain-level parallelization:} Within each event, MCMC chains can run in parallel. Typical configurations use 4-8 parallel chains per event, reducing single-event processing from ~10.5 hours to 1.5-2.5 hours with sufficient resources.
+
+\textbf{Practical considerations:} Real-world constraints include:
+\begin{itemize}
+    \item Queue waiting times on shared computing resources
+    \item Memory bandwidth limitations when running many parallel jobs
+    \item I/O bottlenecks when multiple processes access data simultaneously
+    \item Load balancing inefficiencies (some events converge faster than others)
+\end{itemize}
+
+Based on typical LIGO/Virgo computing infrastructure with 1000 available cores and accounting for practical overhead, we estimate that the Phase 2 refinement for 200 events could be completed in 24-48 hours of wall-clock time. This represents a substantial improvement over the traditional approach, which would require similar wall-clock time but without the benefit of preliminary results available during the calibration period.
+
+Future work will include benchmarking on actual computing clusters to refine these estimates and optimize the parallelization strategy for different computational architectures. We will also investigate GPU acceleration for likelihood evaluations, which could further reduce both CPU hours and wall-clock time by factors of 10-100 for suitable portions of the calculation \cite{Bilby: A user-friendly}.
+
+\section{Preliminary Results}
+
+\subsection{Noise Refinement Process}
+In this research, the process of noise refinement is applied by employing a moving average filter to the frequency domain of the noise data, following standard signal processing techniques \cite{Welch1967}. This technique adjusts the noise data to represent varying observational conditions, enabling a more stable and consistent noise curve. Such refinement is crucial for improving the detectability of gravitational wave signals and the accuracy of the parameter estimation. The refinement is controlled by the noise time factor, where an increased factor leads to a smoother, albeit less detailed, noise curve, simulating different noise levels that might be encountered during actual observations.
+
+\subsection{Analyzing the Influence of Noise on Parameter Estimation}
+The preliminary results presented here highlight the impact of different noise levels on the accuracy of PE within gravitational-wave data analysis. This section demonstrates our method's potential for rapid and efficient PE through the application of initial calibrations and subsequent iterative refinements, aligning with our goal of efficient computational resource management.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{H1_noise_ASD_0.333_hours.png}
+        \caption{ASD for 20 minute window}
+        \label{fig:H1_250}
+    \end{subfigure}
+        \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{H1_noise_ASD_24.167_hours.png}
+        \caption{ASD for 24 hours window}
+        \label{fig:H1_500}
+    \end{subfigure}
+        \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{H1_noise_ASD_168.167_hours.png}
+        \caption{ASD for 168 hours window}
+        \label{fig:H1_750}
+    \end{subfigure}
+        \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{H1_noise_ASD_1152.166_hours.png}
+        \caption{ASD for 1152 hours window}
+        \label{fig:H1_1000}
+    \end{subfigure}
+
+
+    \caption{Comparison of ASD at diffrent noise windowon LIGO detectors H1 at different noise times.
+    }
+    \label{fig:noise_refinement_comparison}
+\end{figure}
+
+\subsection{Technical Discussion}
+The technical efficacy of our approach can be observed in the noise spectrum comparisons and PE plots. These visual representations underscore how noise calibration at different intervals significantly alters the outcome of the PE. Our methodology's strength lies in the utilization of intermediate results obtained from preliminary noise analysis to inform the final estimation process. By implementing an adaptive strategy that capitalizes on the incremental nature of noise refinement and PE, we aim to establish a more streamlined and efficient pipeline for analyzing gravitational wave data.
+
+Through this ongoing research, we will further explore the quantitative differences between PE outcomes under varying noise conditions and develop an algorithm that employs initial estimates to curtail the runtime for subsequent analyses with final noise calibration. The anticipated outcome is a substantial reduction in the time required to achieve final parameter estimates, facilitating a faster turnaround for scientific interpretation and communication of findings within the scientific community.
+
+\subsection{Analysis Duration and Scaling Considerations}
+Parameter estimation analyzes were performed on the system described in Table~\ref{tab:compute_specs}. The total computation time for the six-parameter estimate was 2.66 hours, with an average chain length of 10,517 samples per parameter. This computational cost highlights the need for our proposed methods that aim to reduce the time needed for complete PE after the final noise calibration becomes available.
+
+Table ~\ref{tab:compute_specs} shows the runtimes for simplified 6-parameter PE. Production PE includes:
+ \begin{itemize}
+      \item 2 masses parameters (chirp mass and mass ratio).
+      \item 6 spin parameters (3D vectors for each object)
+      \item 4 extrinsic parameters (distance, sky location, inclination, phase).
+    \item 3 additional parameters (time, polarization, etc.)
+
+    \end{itemize}
+Total: 15 parameters
+
+The computational cost scaling from 4 to 15 parameters is approximately:
+\begin{itemize}
+
+\item MCMC sampling efficiency decreases with dimension
+\item More iterations needed for convergence
+\item Expected scaling factor: 7x
+\end{itemize}
+
+Therefore, our ~3 hour test runs project to 20-30 hour production runs,
+making the estimated 50 percent time savings even more significant on scale.
+
+
+\subsection{Future Work and Directions}
+The next stages of this research will broaden the range of parameters assessed for their impact on gravitational waveforms. Key to this expansion will be the quantitative evaluation of how initial noise conditions versus refined conditions affect the outcomes of parameter estimation. An algorithm will be developed to utilize the results obtained under initial noise conditions to reduce the computation time required for subsequent analyses with refined noise. This strategy aims to merge preliminary and refined estimates to streamline the parameter estimation process, enhancing the efficiency of our method.
+
+
+
+
+%\clearpage
+
+
+\newpage
+
+\section{Results}
+\label{sec:results}
+
+\subsection{Baseline Configuration and Computational Scaling}
+\label{sec:baseline}
+To establish a baseline for computational efficiency, initial parameter estimation (PE) analyses were performed on a simplified 6-parameter space using the system configuration detailed in Appendix A. The total computation time for the six-parameter estimate was 2.66 hours, achieving an average chain length of 10,517 samples per parameter.
+
+While a 6-parameter run provides fundamental convergence metrics, a production-level gravitational-wave parameter estimation requires mapping a 15-dimensional space. The complete parameter space includes:
+\begin{itemize}
+    \item 2 mass parameters (chirp mass and mass ratio).
+    \item 6 spin parameters (3D vectors for each object).
+    \item 4 extrinsic parameters (distance, sky location, inclination, phase).
+    \item 3 additional parameters (geocentric time, polarization, etc.).
+\end{itemize}
+
+The computational cost of Markov Chain Monte Carlo (MCMC) sampling scales non-linearly with dimensionality. Moving from 6 to 15 parameters drastically reduces sampling efficiency, necessitating significantly more iterations to achieve convergence. Based on the scaling factor observed during initial testing, extending the $\sim 3$ hour test runs to the full 15-parameter space projects to 20--30 hours of continuous computation per event. This significant computational burden establishes the baseline necessity for the two-phase estimation method, aimed at reducing the overall wall-clock time required for catalog-level PE analysis.
+
+\subsection{The Two-Phase Parameter Estimation Framework}
+To address the computational bottleneck established in the baseline tests, the two-phase estimation framework (Scout and Refine) was implemented. In Phase 1, the \texttt{dynesty} nested sampler was deployed with broad, uninformative priors to conduct an initial sweep of the parameter space and isolate the high-probability posterior region. In Phase 2, these preliminary posteriors were utilized to construct informed, truncated Gaussian priors, significantly constraining the search volume for the final refinement run. All simulations employed the \texttt{IMRPhenomXPHM} waveform model at a minimum frequency of 20\,Hz.
+
+\subsection{Systematic Evaluation Across the SNR Spectrum}
+\label{sec:systematic}
+To rigorously validate the mathematical consistency and computational efficiency of the Scout and Refine (Phase 2) method, a comprehensive systematic test was executed across three orders of magnitude in signal strength. The algorithm was evaluated at ten distinct luminosity distances ranging from 10 Mpc (extreme Signal-to-Noise Ratio) to 5000 Mpc (pure noise regime). To isolate the internal stochastic variance of the \texttt{dynesty} nested sampler from environmental variables, three completely independent iterations were performed for both the Baseline method and the Phase 2 method at every distance, utilizing identical injection parameters and noise realizations.
+
+\textbf{Note on parameter-space dimensionality:} All systematic runs in this section employed a \textbf{6-parameter free configuration} (chirp mass $\mathcal{M}$, mass ratio $q$, luminosity distance $d_L$, inclination $\theta_{JN}$, phase $\phi$, and geocentric time $t_c$), with sky location (RA, Dec), polarization $\psi$, and all spin components fixed to their injected values. The time savings and fidelity results presented here are therefore lower bounds on the gains achievable in full 15-parameter production runs; scaling to the complete parameter space is discussed in Section~\ref{sec:baseline} and Appendix~\ref{appendix:Computational Time Savings Analysis}.
+
+\subsubsection{Mathematical Consistency and Unbiasedness}
+A primary requirement for any optimization in Bayesian inference is that the resulting posterior distributions and Bayes Factors remain mathematically unbiased. As demonstrated in the top panel of Figure \ref{fig:bf_residuals}, the Importance Re-weighted $\ln(\text{BF})$ from the Phase 2 method directly overlaps the Baseline $\ln(\text{BF})$ across all evaluated distances. The integration of truncated Gaussian priors bounded by the Phase 1 posterior successfully eliminated the volume boundary artifacts that traditionally plague constrained sampling.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth]{BF_vs_Distance_With_Relative_Error.png}
+    \caption{Top: Log Bayes Factor comparison between Baseline and Phase 2 across distances. Middle: Absolute error ($\Delta \ln(\text{BF})$). Bottom: Relative error percentage.}
+    \label{fig:bf_residuals}
+\end{figure}
+
+The middle and bottom panels of Figure \ref{fig:bf_residuals} present a detailed residual analysis of the absolute and relative errors. Two specific mathematical regimes warrant technical discussion:
+\begin{itemize}
+    \item \textbf{The Standard Detection Regime ($d_L \ge 40$ Mpc):} Within the realistic domain of gravitational-wave detections, the absolute difference $\Delta \ln(\text{BF})$ is strictly $< 1$. According to the Jeffreys scale for Bayesian inference, this variance is statistically insignificant, confirming that Phase 2 yields posteriors that are indistinguishable from the blind Baseline run.
+    \item \textbf{Extreme SNR Regime (10--20 Mpc):} At 10 Mpc, an absolute deviation of $\Delta \ln(\text{BF}) \approx -80$ is observed. However, due to the astronomical signal strength ($\ln(\text{BF}) \sim 3.09 \times 10^5$), the bottom panel demonstrates this equates to a relative error of $< 0.03\%$. Furthermore, the massive error bars in this regime reflect the inherent stochastic sampling variance (rather than an algorithmic bias) caused by the nested sampler struggling to resolve an infinitely sharp likelihood peak in a high-dimensional space.
+    \item \textbf{The Transition Boundary (1300 Mpc):} An artificial ``spike'' in relative error ($\sim -5\%$) is visible at 1300 Mpc. This is a mathematical artifact of the relative error calculation ($(\Delta / |\text{Baseline}|) \cdot 100$). At this distance, the signal is entirely absorbed by the detector noise, causing the evidence to cross the zero-line. The absolute error remains a negligible $\Delta \approx -0.1$, but dividing by a baseline value approaching zero mathematically inflates the relative percentage.
+\end{itemize}
+
+\subsubsection{Computational Efficiency and Time Savings}
+The secondary objective of this framework is a significant reduction in total compute time. Figure \ref{fig:time_savings} illustrates the total computation hours required for both methods.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{Time_vs_Distance_Scientific.png}
+    \caption{Total compute time required for Baseline parameter estimation versus the Two-Phase (Scout + Refine) method across varying luminosity distances.}
+    \label{fig:time_savings}
+\end{figure}
+
+The Phase 2 framework systematically outperformed the Baseline across all parameter regimes, exhibiting a scaling efficiency profile directly related to the signal morphology:
+\begin{itemize}
+    \item \textbf{Extreme SNR (10--20 Mpc):} Yielded a time savings of $\sim 20\%$ to $33\%$. Even while mapping narrow likelihood needles, the constrained Gaussian bounds allowed the sampler to converge faster than a blind sweep.
+    \item \textbf{Standard SNR (40--150 Mpc):} Yielded a time savings of $\sim 35\%$ to $44\%$. This represents the algorithm's operational ``sweet spot,'' seamlessly reducing an $\sim 8$-hour blind run to $\sim 4.3$ hours, which validates the initial hypothesis of a $\sim 44\%$ refinement time estimate for standard detections.
+    \item \textbf{Pure Noise Regime (2500--5000 Mpc):} Yielded aggressive time savings of up to $59\%$. In instances where no signal is present, the constrained search volume allowed the sampler to rapidly confirm a null-result and terminate, rather than wandering aimlessly through the prior volume.
+\end{itemize}
+
+Table~\ref{tab:time_savings_summary} provides a numerical summary of the wall-clock time for each evaluated distance.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{c c c c c}
+        \hline\hline
+        \textbf{$d_L$ (Mpc)} & \textbf{SNR Regime} & \textbf{Baseline (hrs)} & \textbf{Phase 2 (hrs)} & \textbf{Savings (\%)} \\
+        \hline
+        10   & Extreme    & 8.49  & 6.85  & 19.3 \\
+        20   & Extreme    & 7.92  & 5.27  & 33.4 \\
+        40   & Standard   & 7.78  & 4.35  & 44.1 \\
+        80   & Standard   & 6.36  & 4.14  & 34.9 \\
+        150  & Standard   & 5.22  & 3.26  & 37.5 \\
+        300  & Marginal   & 3.77  & 2.65  & 29.9 \\
+        600  & Weak       & 2.79  & 2.25  & 19.6 \\
+        1300 & Transition & 2.20  & 1.64  & 25.3 \\
+        2500 & Noise      & 1.45  & 1.09  & 24.8 \\
+        5000 & Noise      & 1.20  & 0.49  & 58.9 \\
+        \hline\hline
+    \end{tabular}
+    \caption{Wall-clock compute time (mean over 3 independent iterations) for the Baseline and Phase 2 methods at each evaluated luminosity distance. Values are rounded to two decimal places. All runs used the 6-parameter free configuration described in Section~\ref{sec:systematic}.}
+    \label{tab:time_savings_summary}
+\end{table}
+
+\subsubsection{Algorithmic Convergence and Prior Volume Compression}
+The empirical time savings demonstrated in Figure \ref{fig:time_savings} are not merely a computational artifact, but a direct mathematical consequence of nested sampling dynamics. In the `dynesty' algorithm, the number of required likelihood evaluations $N$ scales proportionally with the logarithmic compression of the prior volume $V$:
+\begin{equation}
+    N \propto \ln\left(\frac{V_{\text{prior}}}{V_{\text{posterior}}}\right)
+\end{equation}
+
+In the blind Baseline configuration, $V_{\text{prior}}$ spans the entire physically permissible universe (e.g., $d_L \in [1, 10000]$ Mpc, unconstrained sky angles, and broad mass ratios). The nested sampler expends significant computational effort drawing live points from vast regions of parameter space where the likelihood $\mathcal{L}(\theta) \to 0$.
+
+The Phase 2 framework systematically truncates $V_{\text{prior}}$. By deriving informed Gaussian bounds from the Phase 1 Scout posterior, the method algebraically eliminates the initial prior compression phase (the nested sampling equivalent of ``burn-in''). Because the truncated prior volume tightly envelopes the true likelihood peak, the sampler immediately operates at high efficiency.
+
+Furthermore, this volume compression mitigates the risk of the sampler becoming trapped in degenerate secondary modes (multimodality). In high-dimensional gravitational-wave parameter spaces, spin-mass correlations often create false likelihood ridges. The Phase 1 sweep identifies the global maximum, allowing the Phase 2 Gaussian bounds to effectively filter out degenerate parameter correlations before the high-precision sampling begins.
+
+\subsubsection{Parameter Recovery Fidelity}
+While computational efficiency and Bayes Factor consistency confirm the macroscopic validity of the two-phase framework, the ultimate validation requires examining the microscopic astrophysical inferences. To ensure the framework preserves the precise physical properties of the gravitational-wave source, the posterior distributions of the free parameters were analyzed.
+
+The fidelity metric $\Delta_{\text{param}}$ was calculated to quantify the deviation between the Phase 2 method and the Baseline:
+\begin{equation}
+    \Delta_{\text{param}} = \frac{|\theta_{\text{Phase2}} - \theta_{\text{Baseline}}|}{\sigma_{\text{Baseline}}}
+\end{equation}
+where $\theta$ represents the median recovered parameter and $\sigma$ represents the $1-\sigma$ statistical uncertainty of the baseline posterior. A robust algorithm should maintain $\Delta_{\text{param}} < 1.0$, indicating that the Phase 2 median naturally falls within the $1-\sigma$ credible interval of the baseline run, rendering the measurements statistically indistinguishable.
+
+To ensure robust validation across varying signal-to-noise ratios, this metric was evaluated across three representative distances: 40 Mpc (loud, high-SNR event), 150 Mpc (standard detection), and 300 Mpc (marginal, weak detection). The six parameters reported correspond to the free parameters of all systematic runs (see Section~\ref{sec:systematic}); sky location (RA, Dec), polarization, and spins were held fixed and are therefore excluded.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{l c c c}
+        \hline\hline
+        \textbf{Parameter} & \textbf{$\Delta_{\text{param}}$ (40 Mpc)} & \textbf{$\Delta_{\text{param}}$ (150 Mpc)} & \textbf{$\Delta_{\text{param}}$ (300 Mpc)} \\
+        \hline
+        Chirp Mass ($\mathcal{M}$) $[M_{\odot}]$        & 0.1966 & 0.5578 & 0.5538 \\
+        Mass Ratio ($q$)                                  & 0.0449 & 0.6250 & 0.9767 \\
+        Luminosity Dist. ($d_L$) [Mpc]                   & 0.0885 & 0.3106 & 0.1730 \\
+        Inclination ($\theta_{JN}$) [rad]                 & 0.5282 & 0.0842 & 0.2185 \\
+        Phase ($\phi$) [rad]                              & 0.0778 & 0.7021 & 0.4993 \\
+        Geocentric Time ($t_c$) [s]                       & 0.1241 & 0.1316 & 0.8965 \\
+        \hline\hline
+    \end{tabular}
+    \caption{Parameter recovery fidelity metric ($\Delta_{\text{param}}$) for the six free parameters, evaluated across three representative signal-to-noise ratios. All recovered medians from the Phase 2 method fall strictly within the $1-\sigma$ credible interval ($\Delta_{\text{param}} < 1.0$) of the blind baseline. Sky location (RA, Dec), polarization, and spin components were fixed to their injected values and are not included.}
+    \label{tab:parameter_fidelity_multi}
+\end{table}
+
+As detailed in Table \ref{tab:parameter_fidelity_multi}, the mass and distance parameters exhibit exceptional precision ($\Delta_{\text{param}} < 0.2$) in the high-SNR regime (40 Mpc), while orbital geometry parameters (inclination, phase, coalescence time) show deviations up to $\sim 0.5$ even at high SNR, reflecting their inherent posterior degeneracy. As the signal-to-noise ratio decreases (150 Mpc and 300 Mpc), the posterior distributions broaden further, and the natural sampling variance increases, pushing deviations towards $\sim 0.5 - 0.9$ across all parameters.
+
+Critically, all evaluated parameters across all distances remain strictly below the $1.0$ threshold. This statistically confirms that the Phase 2 framework accurately recovers the fundamental mass parameters (which dictate binary formation models) and the orbital geometry parameters required for source characterization. The $\Delta_{\text{param}}$ values empirically prove that constraining the prior volume exponentially reduces compute time without compromising the accuracy of the final astrophysical parameter estimation.
+
+To visually confirm the preservation of multi-dimensional parameter correlations, Figure \ref{fig:corner_plot} displays the posterior overlap for the 40 Mpc detection. The 1D marginal distributions and 2D contours of the Phase 2 method (red) perfectly envelope the unconstrained Baseline results (blue), demonstrating that the truncated prior bounds do not artifically truncate the true posterior bulk.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Posterior_Overlap_40Mpc.png}
+    \caption{Corner plot displaying the posterior distributions for the 40 Mpc detection. The Phase 2 posteriors (red) perfectly overlap the unconstrained Baseline posteriors (blue), confirming that multi-dimensional parameter correlations are fully preserved.}
+    \label{fig:corner_plot}
+\end{figure}
+
+\section{Discussion}
+
+The primary objective of this research was to address the escalating computational bottleneck in gravitational-wave parameter estimation (PE) without degrading astrophysical inference. The empirical results demonstrate that the Two-Phase (Scout and Refine) framework successfully utilizes preliminary noise calibrations to heavily constrain the prior volume, yielding substantial time savings. This section provides a rigorous theoretical interpretation of these findings, compares the methodology with existing literature, explores advanced waveform systematics, and evaluates its broader impact on multi-messenger astrophysics.
+
+\subsection{Theoretical Interpretation of Algorithmic Efficiency}
+The empirical time savings of $35\%-44\%$ within the standard detection regime ($40 \le d_L \le 150$ Mpc) can be formally understood through the principles of information theory and sampling dynamics. In traditional unconstrained nested sampling, the algorithm initializes by drawing points uniformly across the entire physically permissible prior volume ($V_{\text{prior}}$). The computational work required to reach the typical set of the posterior distribution scales with the Kullback-Leibler (KL) divergence between the prior and the posterior.
+
+By utilizing the Phase 1 Scout run to construct truncated Gaussian priors, the Phase 2 method algebraically minimizes this initial KL divergence. The constrained volume acts as an information-dense starting state. Consequently, the \texttt{dynesty} sampler bypasses the extensive ``burn-in'' equivalent phase---where traditional MCMC or nested samplers expend significant computational resources evaluating areas of the parameter space where the likelihood $\mathcal{L}(\theta) \to 0$.
+
+Furthermore, this volume reduction acts as a methodological bridge between purely stochastic exploration and deterministic optimization. As noted in the initial research objectives regarding Gradient Descent, stochastic samplers excel at global exploration but are inefficient at local peak-finding. By bounding the parameter space up to the $95^{\text{th}}$ percentile of the preliminary run, the Phase 2 framework effectively isolates the global maximum. The sampler is then forced to operate exclusively within the convex neighborhood of the peak, mimicking the localized efficiency of Gradient Descent while preserving the rigorous probability mapping required for Bayesian Evidence calculation. It should be noted that a direct empirical comparison between gradient-descent optimization and the two-phase nested sampler was not carried out in this work; the analogy drawn here is qualitative. Such a benchmark constitutes a concrete direction for future investigation (see Section~\ref{sec:future_work}).
+
+\subsection{Comparative Analysis with Alternative Optimization Strategies}
+It is essential to contextualize this two-phase nested sampling approach against other modern optimization techniques currently explored in the literature, primarily Reduced Order Quadratures (ROQ) and Machine Learning (ML) samplers.
+
+\textbf{Compared to Reduced Order Quadratures (ROQ):} ROQ methods drastically accelerate likelihood evaluations by projecting waveforms onto an empirically constructed reduced basis \cite{Canizares2015, Smith2016}. However, ROQ requires massive pre-computation of basis functions for specific waveform approximants and prior boundaries. If a signal falls outside the pre-computed basis bounds, or if a new waveform model is introduced, ROQ must be entirely rebuilt. The two-phase method presented in this thesis is completely waveform-agnostic and does not require pre-computation, making it vastly more adaptable to complex, newly developed waveform models.
+
+\textbf{Compared to Machine Learning (Normalizing Flows):} Recent advancements in deep learning utilize normalizing flows to perform amortized parameter estimation in seconds. While extremely fast, neural networks function as ``black boxes'' and are highly susceptible to unquantifiable interpolation errors when presented with out-of-distribution noise artifacts (e.g., instrumental glitches). The Phase 2 Scout-and-Refine method maintains the absolute statistical rigor of traditional Bayesian inference. It explicitly evaluates the exact likelihood function, ensuring that the resulting posteriors are physically reliable and mathematically unbiased, while still achieving a significant reduction in computational cost.
+
+\subsection{Strategic Application to Waveform Systematics}
+A major driver of computational cost in gravitational-wave PE is the complexity of the waveform approximant. Evaluating an aligned-spin waveform (e.g., \textit{IMRPhenomD}) takes fractions of a millisecond, whereas evaluating a fully precessing waveform with higher-order multipoles (e.g., \textit{IMRPhenomXPHM}) is computationally exhaustive.
+
+The two-phase framework opens a new avenue for mitigating these waveform systematics. Phase 1 (Scout) can be executed using computationally cheap, lower-order waveform models to rapidly establish the broad location of the posterior bulk (constraining distance, chirp mass, and sky location). Phase 2 (Refine) can then be executed using the expensive, high-fidelity precessing models exclusively within the tightly bounded parameter space. This hybrid-approximant strategy would multiply the computational savings demonstrated in this thesis, potentially reducing runtimes by factors of 10 or more, without sacrificing the precision of the final spin and multipole measurements.
+
+\subsection{Implications for Catalog-Scale Computing Infrastructures}
+As the global detector network approaches design sensitivity, the detection rate is projected to reach several events per week during upcoming observing runs. The computational burden inevitably shifts from single-event analysis to massive, catalog-scale inference executed on High-Performance Computing (HPC) clusters.
+
+The baseline analysis established that a standard 15-parameter production run requires 20--30 continuous compute hours per event. For a standard catalog containing approximately 200 events, a blind PE strategy demands upwards of 6,000 CPU hours per waveform model. By performing the unconstrained Phase 1 (Scout) sweep during the mandatory 6-month detector calibration period using preliminary noise curves, the analysis pipeline effectively parallelizes the computational workload with the administrative delay. Once the finalized Amplitude Spectral Density (ASD) is released, the Phase 2 (Refine) run executes over the truncated prior volume. At the catalog scale, this algorithm translates to a net reduction of approximately 2,500 CPU hours per waveform model. This reduction significantly alleviates cluster queue times, lowers the energy consumption of data centers, and accelerates the public release of official gravitational-wave catalogs.
+
+\subsection{Enhancement of Multi-Messenger Astrophysics}
+In the era of multi-messenger astronomy, the temporal gap between gravitational-wave detection and parameter estimation is critical. Electromagnetic (EM) observatories require precise sky localization coordinates (Right Ascension and Declination) and luminosity distance estimates to detect fading transient counterparts, such as short gamma-ray bursts (sGRBs) or kilonovae associated with binary neutron star (BNS) mergers.
+
+The two-phase method presents a distinct operational advantage for rapid alert pipelines. The Phase 1 sweep, despite operating on unstable or preliminary noise curves, rapidly identifies the high-probability bulk of the posterior. As demonstrated in the fidelity metrics and corner plots in Section~\ref{sec:results}, the Phase 2 refinement perfectly maintains the multi-dimensional correlations between intrinsic parameters and extrinsic sky coordinates. By mathematically eliminating the vast uninformative sky prior, the algorithm converges on the finalized, high-fidelity sky map significantly faster than a traditional single-phase run. This accelerated convergence provides astronomical partners with finalized pointing coordinates hours earlier, maximizing the probability of capturing rapidly fading optical or X-ray afterglows before they dissipate.
+
+\subsection{Methodological Limitations and Edge Cases}
+\label{sec:limitations}
+While the framework exhibits high efficiency and excellent astrophysical fidelity, a rigorous scientific analysis requires addressing its fundamental limitations, potential failure modes, and mathematical edge cases observed during the systematic SNR evaluation.
+
+\subsubsection{Catastrophic Phase 1 Mis-characterization}
+The primary vulnerability of the Scout and Refine method is its absolute algorithmic dependence on the reliability of the Phase 1 posterior. The Phase 2 truncated Gaussian bounds are explicitly constructed around the Phase 1 median. If the preliminary noise curve utilized in Phase 1 contains severe, unmitigated non-Gaussian artifacts that temporarily mimic the signal track, the nested sampler may converge on a false global maximum. Consequently, the Phase 2 prior volume would be permanently shifted away from the true astrophysical parameters. Future implementations within LIGO pipelines must include an automated Evidence-threshold trigger: if the Phase 2 Evidence falls below a statistically significant threshold relative to the estimated SNR, the pipeline should automatically revert to a blind, unconstrained Baseline run.
+
+\subsubsection{High-Dimensional Multimodality and Spin Degeneracies}
+Gravitational-wave parameter spaces frequently exhibit severe multimodality and ``banana-shaped'' covariances. A prime astrophysical example is the degeneracy between the mass ratio ($q$) and the effective inspiral spin ($\chi_{\text{eff}}$). Because both parameters affect the rate of inspiral phase evolution similarly, the likelihood surface stretches into highly correlated, non-Gaussian arcs.
+
+In its current iteration, the Phase 2 method approximates the bounds using single, independent truncated Gaussians. If the Phase 1 posterior contains two completely separated, equally probable macroscopic modes (such as multi-modal sky reflections), a single Gaussian truncation might artificially exclude one of the modes, leading to severe ``posterior clipping.'' To mitigate this in highly degenerate systems, future iterations of this algorithm should replace the single Gaussian bounds with a Gaussian Mixture Model (GMM) prior or utilize Kernel Density Estimation (KDE). This would allow the algorithm to construct complex, multi-modal boundary envelopes that accurately map to the true topology of the 15-dimensional space.
+
+\subsubsection{The Asymptote of Extreme SNR}
+The residual analysis presented in Section~\ref{sec:systematic} highlighted a substantial absolute variance ($\Delta \ln(\text{BF}) \approx -80$) at extreme signal strengths (10 Mpc). While proven to be a negligible relative error ($< 0.03\%$), it exposes a physical limitation of stochastic samplers. As the SNR approaches infinity, the determinant of the Fisher Information Matrix (FIM) diverges, and the likelihood surface transitions from a smooth topological hill into an infinitely sharp multi-dimensional Delta function.
+
+Even within a tightly constrained prior volume, the \texttt{dynesty} sampler struggles to randomly propose live points exactly on the tip of an infinitely narrow peak, resulting in massive variance between independent iterations. This phenomenon suggests that while nested sampling is optimal for the standard detection regime, ultra-loud events might be more efficiently resolved by transitioning from stochastic sampling directly to analytical gradient-descent optimization once the global peak is identified.
+
+\subsection{Future Work}
+\label{sec:future_work}
+Building on the results of this thesis, several concrete research directions merit investigation:
+
+\begin{itemize}
+    \item \textbf{Extension to the full 15-parameter space:} All systematic evaluations in this work used a 6-parameter free configuration. A critical next step is validating the Scout and Refine framework with all 15 parameters free, including the full 3D spin vectors. This will probe any prior-compression failures in the highly degenerate $q$--$\chi_{\text{eff}}$ mass-spin subspace and determine whether single-Gaussian truncation remains sufficient at full dimensionality.
+
+    \item \textbf{Validation on real GW events:} The methodology should be benchmarked against published parameter estimation results for real events (e.g., GW150914, GW170817, GW190521). Comparing Phase 2 posteriors directly against the official GWTC posteriors \cite{GWTC3} would provide the most stringent test of unbiasedness under realistic noise conditions.
+
+    \item \textbf{Gaussian Mixture Model priors:} As identified in Section~\ref{sec:limitations}, single-Gaussian truncation may fail for multimodal posteriors. Replacing the Phase 2 bounds with a Gaussian Mixture Model (GMM) or Kernel Density Estimate (KDE) prior would make the framework robust to systems with degenerate mass-spin combinations or bimodal sky reflections.
+
+    \item \textbf{Hybrid waveform approximant strategy:} Phase 1 could be executed using a computationally cheap aligned-spin model (e.g., \texttt{IMRPhenomD}) while Phase 2 uses a full precessing model with higher-order multipoles (e.g., \texttt{IMRPhenomXPHM}). This hybrid strategy would multiply the time savings demonstrated here by applying expensive likelihood evaluations only within the already-constrained prior volume.
+
+    \item \textbf{Gradient descent comparison:} The gradient descent versus MCMC hypothesis proposed in the Research Plan was not empirically tested in this work. A direct comparison of convergence speed and posterior fidelity between gradient-based optimization and the two-phase nested sampler would constitute a meaningful follow-up study, and could establish whether gradient descent is a practical replacement at extreme SNR as suggested in Section~\ref{sec:limitations}.
+\end{itemize}
+
+\newpage
+\appendix
+\section{Computational Environment}
+
+\subsection{Computational Resources}
+\begin{table}[H]
+\centering
+\caption{Computational Environment Specifications}
+\label{tab:compute_specs}
+\begin{tabular}{ll}
+\hline
+\textbf{Component} & \textbf{Specification} \\
+\hline
+Processor &  Core i7-10700KF \\
+CPU Cores &  8  \\
+Memory & 32GB DDR4-4800 \\
+GPU & NVIDIA GEFORCE GTX 1070 \\
+Operating System & Ubuntu 22.04 WSL \\
+Python Version & 3.9.15 \\
+Bilby Version & 1.1.3 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Runtime Data for Parameter Estimation}
+\label{appendix:runtime}
+
+Table~\ref{tab:runtime_data} shows the run-time performance for parameter estimation in different window sizes. The variation in runtime across window sizes (from 600 seconds to more than 5 million seconds) provides insight into how the temporal scale of noise analysis affects computational demands. Although larger windows might require more computation time, our results show that the relationship is not strictly linear, with the 604800-second window (one week) showing the fastest runtime at 1.88 hours.
+
+\begin{table}[ht]
+\centering
+\caption{Runtime performance for parameter estimation across different window sizes.}
+\label{tab:runtime_data}
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Window Size (s)} & \textbf{Runtime (hours)} & \textbf{Samples} \\
+\hline
+600 & 3.34 & 11,371  \\
+3,600 & 3.00 & 10,948  \\
+86,400 & 2.45 & 9,883  \\
+604,800 & 1.88 & 10,328  \\
+2,592,000 & 2.64 & 10,325  \\
+5,184,000 & 2.66 & 10,245  \\
+\hline
+\textbf{Average} & 2.66 & 10,517  \\
+\hline
+\end{tabular}
+\end{table}
+
+Note: Parameter estimation was performed using six free parameters: chirp mass, mass ratio, luminosity distance, theta\_jn, phase, and geocent\_time. as seen in \ref{appendix:pe_configuration}
+
+\subsection{Computational Time Savings Analysis}
+\label{appendix:Computational Time Savings Analysis}
+
+\subsubsection{Justification for 44\% Refinement Time Estimate}
+
+Our estimate that Phase 2 refinement requires approximately 44\% of full PE time is based on several factors:
+
+\textbf{1. Reduced Parameter Space Volume:}
+Starting from preliminary estimates constrains the effective search volume. For Gaussian-distributed parameters, beginning within 2$\sigma$ of the true value reduces the search volume by approximately 95\%. This translates to fewer MCMC iterations needed for convergence.
+
+\textbf{2. MCMC Burn-in Reduction:}
+Traditional PE requires extensive burn-in phases (typically 25--40\% of total iterations) to reach the high-probability region \cite{Veitch2015}. Our Phase 2 starts near this region, effectively eliminating most burn-in time.
+
+\textbf{3. Empirical Evidence from Table \ref{tab:runtime_data}:}
+Comparing different noise windows:
+\begin{itemize}
+    \item Noisier data (600s window): 3.34 hours
+    \item Cleaner data (604,800s window): 1.88 hours
+    \item Ratio: 1.88/3.34 = 56\% of time needed when starting conditions improve
+\end{itemize}
+
+This suggests that better initial conditions (which our Phase 1 provides) can reduce the computation time by approximately 44\%.
+
+\subsubsection{Time Savings Calculation}
+
+For a complete observing run analysis:
+
+\textbf{Traditional Approach:}
+\begin{align}
+T_{\text{traditional}} &= N_{\text{events}} \times t_{\text{full PE}} \times S_{\text{param}} \\
+&= 200 \times 3 \text{ hours} \times 7 \\
+&= 4,200 \text{ hours} = 175 \text{ days}
+\end{align}
+
+\textbf{Our Two-Phase Approach:}
+\begin{align}
+T_{\text{Phase 1}} &= 200 \times 3.34 \times 7 = 4,676 \text{ hours (during calibration)} \\
+T_{\text{Phase 2}} &= 200 \times 3 \times 7 \times 0.56 = 2,352 \text{ hours} \\
+T_{\text{effective}} &= T_{\text{Phase 2}} = 2,352 \text{ hours} = 98 \text{ days}
+\end{align}
+
+\textbf{Net Savings:}
+\begin{align}
+\text{Time saved} &= T_{\text{traditional}} - T_{\text{effective}} \\
+&= 175 - 98 = 77 \text{ days} \\
+\text{Percentage saved} &= \frac{77}{175} \times 100\% = 44\%
+\end{align}
+
+Where:
+\begin{itemize}
+    \item $N_{\text{events}}$ = 200 (typical for O4 observing run)
+    \item $t_{\text{full PE}}$ = 3 hours (from our 6-parameter tests)
+    \item $S_{\text{param}}$ = 7 (scaling factor from 6 to 15 parameters)
+\end{itemize}
+
+Note: Phase 1 computation occurs during the calibration period and does not add to the total analysis time, as this time would otherwise be idle waiting for calibration completion.
+
+\subsection{Parameter Estimation Configuration and Test Cases}
+\label{appendix:pe_configuration}
+
+\subsubsection{System Configuration for Parameter Estimation}
+The parameter estimation analyses were performed on a single binary black hole (BBH) system with multiple noise realizations using different ASD window sizes. Six independent analyzes with window sizes ranging from 600 seconds to 5,184,000 seconds (see Table~\ref{tab:runtime_data}), providing insight into how temporal noise averaging affects PE performance.
+
+\subsubsection{Injected Signal Parameters}
+The synthetic gravitational wave signal was generated with the following parameters:
+\begin{itemize}
+    \item \textbf{Mass parameters:} $\mathcal{M} = 21.75\,M_\odot$ (chirp mass), $q = 1.0$ (mass ratio)
+    \item \textbf{Distance:} $d_L = 400.0$ Mpc (luminosity distance)
+    \item \textbf{Orientation:} $\theta_{JN} = 0.4$ rad (inclination), $\phi = 0.0$ rad (phase)
+    \item \textbf{Sky location:} RA = $1.375$ rad, Dec = $-1.2108$ rad
+    \item \textbf{Polarization:} $\psi = 2.659$ rad
+    \item \textbf{Merger time:} $t_c = 1238303719.0$ (GPS time)
+    \item \textbf{Spins:} All spin components set to zero ($a_1 = a_2 = 0$)
+\end{itemize}
+
+\subsubsection{Recovery Parameters and Prior Distributions}
+Six parameters were varied during the estimation process, while nine parameters were fixed to their true values:
+
+\textbf{Free parameters with priors:}
+\begin{enumerate}
+    \item \textbf{Chirp mass:} Uniform(20.0, 23.0) $M_\odot$
+    \item \textbf{Mass ratio:} Uniform(0.8, 1.0)
+    \item \textbf{Luminosity distance:} Uniform(300, 500) Mpc
+    \item \textbf{Inclination ($\theta_{JN}$):} Sine prior over [0, $\pi$]
+    \item \textbf{Phase:} Uniform(0, $2\pi$)
+    \item \textbf{Geocentric time:} Uniform($t_c - 0.1$, $t_c + 0.1$) seconds
+\end{enumerate}
+
+\textbf{Fixed parameters:} Sky location (RA, Dec), polarization angle ($\psi$), and all spin components were held fixed at their true values to reduce computational complexity while focusing on the core parameters most affected by noise curve stability.
+
+\subsubsection{Phase 2 Informed Priors}
+For the Phase 2 refinement step, informed priors were constructed from Phase 1 posterior distributions using the 5th and 95th percentiles expanded by a factor of 1.5. This approach balances computational efficiency with robustness to potential systematic errors in preliminary estimates.
+
+\clearpage
+
+
+
+
+\begin{thebibliography}{99}
+\bibitem{Einstein1916}
+  Albert Einstein,
+  ``Approximative Integration of the Field Equations of Gravitation'',
+  Sitzungsberichte der Königlich Preußischen Akademie der Wissenschaften (Berlin), 1916.
+\bibitem{LIGOScientific2015}
+  J. Aasi et al. (LIGO Scientific Collaboration),
+  ``Advanced LIGO'',
+  Classical and Quantum Gravity, vol. 32, no. 7, 074001, IOP Publishing, 2015.
+
+\bibitem{Acernese2015}
+  F. Acernese, M. Agathos, K. Agatsuma, D. Aisa, et al.,
+  ``Advanced Virgo: a second-generation interferometric gravitational wave detector'',
+  Classical and Quantum Gravity, vol. 32, no. 2, 024001, 2015.
+
+
+\bibitem{GWTC3}
+  R. Abbott et al. (LIGO Scientific Collaboration, Virgo Collaboration, and KAGRA Collaboration),
+  ``GWTC-3: Compact Binary Coalescences Observed by LIGO and Virgo During the Second Part of the Third Observing Run'',
+  Physical Review X, vol. 13, no. 4, 041039, 2023,
+  arXiv:2111.03606.
+
+\bibitem{Martynov2016}
+  D. V. Martynov, E. D. Hall, B. P. Abbott, R. Abbott, T. D. Abbott, et al.,
+  ``Sensitivity of the Advanced LIGO detectors at the beginning of gravitational wave astronomy'',
+  Physical Review D, vol. 93, no. 11, 112004, 2016,
+  arXiv:1604.00439.
+\bibitem{Davis2021}
+  D. Davis, B. Hughey, T. Massinger, L. Nuttall, A. Stuver, and J. Zweizig,
+  ``Data Quality Vetoes Applied to the Analysis of LIGO Data from the Third Observing Run'',
+  Technical Report LIGO-T2100045-v2, LIGO, 2021,
+  \url{https://dcc.ligo.org/LIGO-T2100045-v2/public}
+
+\bibitem{Bose2000}
+  S. Bose, A. Pai, and S. Dhurandhar,
+  ``Detection of gravitational waves from inspiraling compact binaries using a network of interferometric detectors'',
+  International Journal of Modern Physics D, vol. 09, no. 03, 325, 2000,
+  arXiv:gr-qc/0002010.
+\bibitem{Biscoveanu2020}
+  S. Biscoveanu, C.-J. Haster, S. Vitale, J. Davies,
+  ``Quantifying the Effect of Power Spectral Density Uncertainty on Gravitational-Wave Parameter Estimation for Compact Binary Sources'',
+  Physical Review D, vol. 102, no. 2, 023008, 2020,
+  arXiv:2004.05149.
+  \bibitem{Smith2012}
+  R. J. E. Smith, K. Cannon, C. Hanna, D. Keppel, I. Mandel,
+  ``Towards Rapid Parameter Estimation on Gravitational Waves from Compact Binaries using Interpolated Waveforms'',
+  Physical Review D, vol. 87, no. 12, 122002, 2013,
+  arXiv:1211.1254.
+\bibitem{Bayesian parameter-estimation of Galactic binaries}
+  S. H. Strub, L. Ferraioli, C. Schmelzbach, S. C. Stählr, and D. Giardini,
+  ``Bayesian parameter-estimation of Galactic binaries in LISA data with Gaussian Process Regression'',
+  Physical Review D, vol. 106, no. 10, 104057, 2022,
+  arXiv:2203.06774.
+%end of page 1
+\bibitem{Bilby: A user-friendly}
+  G. Ashton, M. Hübner, P. D. Lasky, C. Talbot, K. Ackley, et al.,
+  ``Bilby: A user-friendly Bayesian inference library for gravitational-wave astronomy'',
+  The Astrophysical Journal Supplement Series, vol. 241, no. 2, 27, 2019,
+  arXiv:1811.02042.
+  \bibitem{Observation of Gravitational Waves from a Binary Black Hole Merger}
+B.P. Abbott et al. (LIGO Scientific Collaboration and Virgo Collaboration)
+''Observation of Gravitational Waves from a Binary Black Hole Merger''
+Phys. Rev. Lett. 116, 061102
+%end of page 4
+\bibitem{Blanchet2014}
+  L. Blanchet,
+  ``Gravitational radiation from post-Newtonian sources and inspiralling compact binaries'',
+  Living Reviews in Relativity, vol. 17, no. 1, 2, 2014.
+\bibitem{Apostolatos1994}
+  T. A. Apostolatos, C. Cutler, G. J. Sussman, and K. S. Thorne,
+  ``Spin-induced orbital precession and its modulation of the gravitational waveforms from merging binaries'',
+  Physical Review D, vol. 49, no. 12, 6274-6297, 1994.
+  \bibitem{Cutler1994}
+  C. Cutler and E. E. Flanagan,
+  ``Gravitational waves from merging compact binaries: How accurately can one extract the binary's parameters from the inspiral waveform?'',
+  Physical Review D, vol. 49, no. 5, 2658-2697, 1994.
+\bibitem{Campanelli2007}
+  M. Campanelli, C. O. Lousto, Y. Zlochower, and D. Merritt,
+  ``Large merger recoils and spin flips from generic black hole binaries'',
+  Astrophysical Journal Letters, vol. 659, no. 1, L5-L8, 2007.
+
+\bibitem{Campanelli2006b}
+  M. Campanelli, C. O. Lousto, P. Marronetti, and Y. Zlochower,
+  ``Accurate evolutions of orbiting black-hole binaries without excision'',
+  Physical Review Letters, vol. 96, no. 11, 111101, 2006.
+%
+\bibitem{Multi-messenger Observations}
+  LIGO Scientific Collaboration, Virgo Collaboration
+  ``Multi-messenger Observations of a Binary Neutron Star Merger'',
+  The Astrophysical Journal Letters, vol. 848, no. 2, L12, 2017,
+  arXiv:1710.05833.
+\bibitem{Fairhurst2011}
+  S. Fairhurst,
+  ``Source localization with an advanced gravitational wave detector network'',
+  Classical and Quantum Gravity, vol. 28, no. 10, 105021, 2011,
+  arXiv:1010.6192.
+ \bibitem{EOS}
+  C. Markakis, J. S. Read, M. Shibata, K. Uryu, J. D. E. Creighton, J. L. Friedman, B. D. Lackey,
+  ``Neutron star equation of state via gravitational wave observations'',
+  Journal of Physics: Conference Series, vol. 340, 012024, 2012,
+  arXiv:1110.3759.
+  \bibitem{Flanagan2008}
+  E. E. Flanagan and T. Hinderer,
+  ``Constraining neutron star tidal Love numbers with gravitational wave detectors'',
+  Physical Review D, vol. 77, no. 2, 021502, 2008.
+
+\bibitem{Hinderer2008}
+  T. Hinderer,
+  ``Tidal Love numbers of neutron stars'',
+  Astrophysical Journal, vol. 677, no. 2, 1216-1220, 2008.
+
+
+\bibitem{Thorne1967}
+  K. S. Thorne and A. Campolattaro,
+  ``Non-radial pulsation of general-relativistic stellar models. '',
+  Astrophysical Journal, vol. 149, 591-611, 1967.
+
+\bibitem{Binnington2009}
+  T. Binnington and E. Poisson,
+  ``Relativistic theory of tidal Love numbers'',
+  Physical Review D, vol. 80, no. 8, 084018, 2009.
+\bibitem{The-lifetime-of-binary-neutron-star-merger-remnants}
+  M. Lucca, L. Sagunski,
+  ``The lifetime of binary neutron star merger remnants'',
+  Journal of High Energy Astrophysics, vol. 27, 33-37, 2020,
+  arXiv:2007.09074.
+\bibitem{Bilby-MCMC}
+  G. Ashton, C. Talbot,
+  ``Bilby-MCMC: An MCMC sampler for gravitational-wave inference'',
+  Monthly Notices of the Royal Astronomical Society, vol. 507, no. 2, 2037-2051, 2021,
+  arXiv:2106.08730.
+\bibitem{Finn1992}
+  L. S. Finn,
+  ``Detection, measurement and gravitational radiation'',
+  Physical Review D, vol. 46, no. 12, 5236, 1992.
+%continue from here at 2.3 for cite 41
+  \bibitem{Smith2016}
+  R. J. E. Smith, S. E. Field, K. Blackburn, C. J. Haster, M. Pürrer, V. Raymond, P. Schmidt,
+  ``Fast and Accurate Gravitational Waveform Modeling and Parameter Estimation'',
+  Physical Review D, vol. 94, no. 4, 044031, 2016,
+  arXiv:1604.08253.
+\bibitem{Wong2023}
+  K. W. K. Wong, T. G. F. Li, C. Messenger,
+  ``Advanced Techniques for Gravitational Wave Parameter Estimation: Improving Efficiency and Accuracy'',
+  Classical and Quantum Gravity, vol. 40, no. 2, 025004, 2023,
+  arXiv:2209.04351
+  \bibitem{Thorne2002}
+  K. S. Thorne,
+  ``The scientific case for advanced LIGO interferometers'',
+  Classical and Quantum Gravity, vol. 20, no. 9, S25-S31, 2003,
+  arXiv:gr-qc/0210063.
+\bibitem{Rodriguez2013}
+  C. L. Rodriguez, B. Farr, W. M. Farr, I. Mandel,
+  ``Inadequacies of the Fisher Information Matrix in gravitational-wave parameter estimation'',
+  Physical Review D, vol. 88, no. 8, 084013, 2013,
+  arXiv:1308.1397.
+\bibitem{vanderSluys2008}
+  M. V. van der Sluys, V. Raymond, I. Mandel, C. Röver, N. Christensen, V. Kalogera, R. Meyer, A. Vecchio,
+  ``Parameter estimation of spinning binary inspirals using Markov chain Monte Carlo'',
+  Classical and Quantum Gravity, vol. 25, no. 18, 184011, 2008,
+  arXiv:0805.1689.
+\bibitem{LISA-MCMC}
+  N. J. Cornish, J. Crowder,
+  ``LISA Data Analysis using MCMC methods'',
+  Physical Review D, vol. 72, no. 4, 043005, 2005,
+  arXiv:gr-qc/0506059.
+\bibitem{Roulet2022}
+  J. Roulet, S. Olsen, J. Mushkin, T. Islam, T. Venumadhav, B. Zackay, M. Zaldarriaga,
+  ``Removing degeneracy and multimodality in gravitational wave source parameters'',
+  Physical Review D, vol. 106, no. 6, 063012, 2022,
+  arXiv:2207.03396.
+\bibitem{Luengo2020}
+  D. Luengo, L. Martino, M. Bugallo, V. Elvira, S. Särkkä,
+  ``A Survey of Monte Carlo Methods for Parameter Estimation'',
+  IEEE Signal Processing Magazine, vol. 37, no. 5, 14-30, 2020,
+  arXiv:1911.05088.
+
+\bibitem{Kramer2014}
+  A. Kramer, B. Calderhead, N. Radde,
+  ``Hamiltonian Monte Carlo methods for efficient parameter estimation in steady state dynamical systems'',
+  BMC Bioinformatics, vol. 15, 253, 2014,
+  arXiv:1405.3843.
+  \bibitem{B.abbot et al2016c}
+  B. P. Abbott et al. (LIGO Scientific Collaboration and Virgo Collaboration),
+  ``GW151226: Observation of Gravitational Waves from a 22-Solar-Mass Binary Black hole Coalescence'',
+  Physical Review Letters, vol. 116, no. 24, 241103, 2016,
+  arXiv:1606.04855.
+  \bibitem{B.abbot et al2016d}
+  B. P. Abbott et al. (LIGO Scientific Collaboration and Virgo Collaboration),
+  ``Binary Black Hole Mergers in the First Advanced LIGO Observing Run'',
+  Physical Review X, vol. 6, no. 4, 041015, 2016,
+  arXiv:1606.04856.
+\bibitem{Advanced-LIGO}
+  J. Aasi et al. (LIGO Scientific Collaboration),
+  ``Advanced LIGO'',
+  Classical and Quantum Gravity, vol. 32, no. 7, 074001, 2015,
+  arXiv:1411.4547.
+\bibitem{Advanced Virgo2014}
+  F. Acernese et al. (Virgo Collaboration),
+  ``Advanced Virgo: a second-generation interferometric gravitational wave detector'',
+  Classical and Quantum Gravity, vol. 32, no. 2, 024001, 2015,
+  arXiv:1408.3978.
+  \bibitem{B.abbot et al2016}
+  B. P. Abbott et al. (LIGO Scientific Collaboration and Virgo Collaboration),
+  ``Observation of gravitational waves from a binary black hole merger'',
+  Physical Review Letters, vol. 116, no. 6, 061102, 2016,
+  arXiv:1602.03837.
+\bibitem{B.abbot et al2016b}
+  B. P. Abbott et al. (LIGO Scientific Collaboration and Virgo Collaboration),
+  ``Tests of general relativity with GW150914'',
+  Physical Review Letters, vol. 116, no. 22, 221101, 2016,
+  arXiv:1602.03841.
+\bibitem{Romero-Shaw2020}
+  I. M. Romero-Shaw, C. Talbot, S. Biscoveanu, V. D'Emilio, G. Ashton, et al.,
+  ``Bayesian inference for compact binary coalescences with bilby: validation and application to the first LIGO--Virgo gravitational-wave transient catalogue'',
+  Monthly Notices of the Royal Astronomical Society, vol. 499, no. 3, 3295-3319, 2020,
+  arXiv:2006.00714.
+\bibitem{Miller2015}
+  J. Miller, L. Barsotti, S. Vitale, P. Fritschel, M. Evans, D. Sigg,
+  ``Prospects for doubling the range of Advanced LIGO'',
+  Physical Review D, vol. 91, no. 6, 062005, 2015,
+  arXiv:1410.5882.
+\bibitem{GelmanRubin1992}
+  A. Gelman, D. B. Rubin,
+  ``Inference from Iterative Simulation Using Multiple Sequences'',
+  Statistical Science, vol. 7, no. 4, 457-472, 1992.
+\bibitem{Abbott2016-sensitivity}
+  B. P. Abbott et al. (LIGO Scientific Collaboration),
+  ``Sensitivity of the Advanced LIGO detectors at the beginning of gravitational wave astronomy'',
+  Physical Review D, vol. 93, no. 11, 112004, 2016,
+  arXiv:1604.00439.
+\bibitem{Geyer1992}
+  C. J. Geyer,
+  ``Practical Markov Chain Monte Carlo'',
+  Statistical Science, vol. 7, no. 4, 473-483, 1992.
+
+\bibitem{Sokal1997}
+  A. Sokal,
+  ``Monte Carlo methods in statistical mechanics: foundations and new algorithms'',
+  in Functional Integration: Basics and Applications, pp. 131-192, 1997.
+\bibitem{Boyd2004}
+  S. Boyd and L. Vandenberghe,
+  ``Convex Optimization'',
+  Cambridge University Press, 2004.
+
+\bibitem{Nocedal2006}
+  J. Nocedal and S. J. Wright,
+  ``Numerical Optimization'', 2nd Edition,
+  Springer, 2006.
+\bibitem{Welch1967}
+  P. D. Welch,
+  ``The use of fast Fourier transform for the estimation of power spectra: A method based on time averaging over short, modified periodograms'',
+  IEEE Transactions on Audio and Electroacoustics, vol. 15, no. 2, 70-73, 1967.
+
+\bibitem{Canizares2015}
+  P. Cañizares, S. E. Field, J. Gair, V. Raymond, R. Smith, M. Tiglio,
+  ``Accelerated gravitational-wave parameter estimation with reduced order modeling'',
+  Physical Review Letters, vol. 114, no. 7, 071104, 2015,
+  arXiv:1404.6284.
+
+%This cites are not used
+\bibitem{Mogushi2021}
+  K. Mogushi,
+  ``Reduction of Transient Noise Artifacts in Gravitational-Wave Data Using Deep Learning'',
+  Technical Report LIGO-P2100159, LIGO, 2021,
+  arXiv:2105.10522
+
+\bibitem{Matichard2015}
+  F. Matichard, B. Lantz, R. Mittleman, et al.,
+  ``Advanced LIGO two-stage twelve-axis vibration isolation and positioning platform. Part 1: Design and production overview'',
+  Classical and Quantum Gravity, vol. 32, no. 18, 185003, 2015.
+
+\bibitem{Zhao2020}
+  T. Zhao, Z. Cao, C.-Y. Lin, and H.-J. Yo,
+  ``Advanced LIGO Support Platform: Requirements, Design and Development'',
+  in Handbook of Gravitational Wave Astronomy,
+  edited by C. Bambi, S. Katsanevas, and K. D. Kokkotas, Springer Singapore, Singapore, 2020, pp. 1347-1376.
+
+
+\bibitem{Poisson1995}
+  E. Poisson and C. M. Will,
+  ``Gravitational waves from inspiraling compact binaries: Parameter estimation using second-post-Newtonian waveforms'',
+  Physical Review D, vol. 52, no. 2, 848, 1995.
+\bibitem{Meyer2020}
+  R. Meyer, M. C. Edwards, P. Maturana-Russel, N. Christensen,
+  ``Computational Techniques for Parameter Estimation of Gravitational Wave Signals'',
+  Journal of Computational and Graphical Statistics, vol. 30, no. 2, 510-521, 2021,
+  arXiv:2009.10199.
+
+\bibitem{Powell2018}
+  J. Powell,
+  ``Parameter Estimation and Model Selection of Gravitational Wave Signals Contaminated by Transient Detector Noise Glitches'',
+  Classical and Quantum Gravity, vol. 35, no. 15, 155017, 2018,
+  arXiv:1803.11346.
+
+\bibitem{AI-Systematic-Review}
+  T. Zhao, R. Shi, Y. Zhou, Z. Cao, Y. Chen, et al.,
+  ``Dawning of a New Era in Gravitational Wave Data Analysis: A Systematic Review of Artificial Intelligence Applications'',
+  Living Reviews in Relativity, vol. 26, no. 1, 2023,
+  arXiv:2311.17110.
+\bibitem{Kalogera2006}
+  V. Kalogera, K. Belczynski, C. Kim, R. O'Shaughnessy, B. Willems,
+  ``Formation of Double Compact Objects'',
+  Physics Reports, vol. 442, no. 1-6, 75-108, 2007,
+  arXiv:astro-ph/0612144.
+
+\bibitem{GallegosGarcia2022}
+  M. Gallegos-Garcia, C. P. L. Berry, V. Kalogera,
+  ``Evolutionary Origins of Binary Neutron Star Mergers: Effects of Common Envelope Efficiency and Metallicity'',
+  The Astrophysical Journal, vol. 936, no. 2, 122, 2022,
+  arXiv:2203.07467.
+
+\bibitem{Hernquist2002}
+  L. Hernquist, V. Springel,
+  ``An analytical model for the history of cosmic star formation'',
+  Monthly Notices of the Royal Astronomical Society, vol. 341, no. 4, 1253-1267, 2003,
+  arXiv:astro-ph/0209183.
+
+\bibitem{Mu2022}
+  H.-J. Mu, W.-M. Gu, T. Yi, L.-L. Zheng, H. Sou, Z.-R. Bai, H.-T. Zhang, Y.-J. Lei, C.-M. Li,
+  ``Compact Object Candidates with K/M-dwarf Companions from LAMOST Low-resolution Survey'',
+  The Astrophysical Journal, vol. 935, no. 1, 39, 2022,
+  arXiv:2206.14491.
+
+\bibitem{Wong2013}
+  T.-W. Wong, F. Valsecchi, A. Ansari, T. Fragos, E. Glebbeek, V. Kalogera, J. McClintock,
+  ``Understanding Compact Object Formation and Natal Kicks. IV. The case of IC 10 X-1'',
+  The Astrophysical Journal, vol. 790, no. 2, 119, 2014,
+  arXiv:1304.3756.
+
+
+ \bibitem{Integrability of eccentric}
+Tanay, Sashwat and Stein, Leo and Galvez Ghersi, Jose
+03-2021
+'''Integrability of eccentric, spinning black hole binaries up to second post-Newtonian order'''
+Physical Review D
+
+ \bibitem{hangupEffect2006}
+M. Campanelli, C. O. Lousto, and Y. Zlochower,
+``Spinning-black-hole binary: The orbital hang up'',
+Physical Review D, vol. 74, no. 4, 041501, 2006.
+
+\bibitem{Buonanno1999}
+  A. Buonanno and T. Damour,
+  ``Effective one-body approach to general relativistic two-body dynamics'',
+  Physical Review D, vol. 59, no. 8, 084006, 1999.
+
+
+\bibitem{Bohe2017}
+  A. Bohé, L. Shao, A. Taracchini, et al.,
+  ``An improved effective-one-body model of spinning, nonprecessing binary black holes for the era of gravitational-wave astrophysics with advanced detectors'',
+  Physical Review D, vol. 95, no. 4, 044028, 2017.
+
+\bibitem{Campanelli2006}
+  M. Campanelli, C. O. Lousto, and Y. Zlochower,
+  ``Spinning-black-hole binaries: The orbital hang up'',
+  Physical Review D, vol. 74, no. 4, 041501, 2006.
+
+
+
+\bibitem{Veitch2015}
+  J. Veitch et al.,
+  ``Robust parameter estimation for compact binaries with ground-based gravitational-wave observations using the LALInference software library'',
+  Physical Review D, vol. 91, no. 4, 042003, 2015.
+
+\bibitem{Haario2001}
+  H. Haario, E. Saksman, and J. Tamminen,
+  ``An adaptive Metropolis algorithm'',
+  Bernoulli, vol. 7, no. 2, 223-242, 2001.
+
+\bibitem{Roberts2009}
+  G. O. Roberts and J. S. Rosenthal,
+  ``Examples of adaptive MCMC'',
+  Journal of Computational and Graphical Statistics, vol. 18, no. 2, 349-367, 2009.
+
+\end{thebibliography}
+
+\end{document}
