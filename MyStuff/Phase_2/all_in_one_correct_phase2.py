@@ -201,8 +201,12 @@ def run_pe(asd_files, label, outdir, informed_priors=None, custom_injection_para
     if informed_priors is None:
         if 'scout' in label.lower():
             print("--- PHASE 1: SCOUT RUN (Fast) ---")
-            sampler_settings = {'npoints': 500, 'walks': 50} 
-            dlogz_val = 0.5 
+            sampler_settings = {'npoints': 500, 'walks': 50}
+            dlogz_val = 0.5
+        elif 'control' in label.lower():
+            print("--- CONTROL RUN (Reduced Budget, Broad Priors — no compression) ---")
+            sampler_settings = {'npoints': 1024, 'walks': 50}
+            dlogz_val = 0.1
         else:
             print("--- PHASE 0: BASELINE (PRODUCTION QUALITY) ---")
             sampler_settings = {'npoints': 2048, 'walks': 100}
