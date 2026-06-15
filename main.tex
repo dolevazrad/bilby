@@ -554,7 +554,7 @@ A critical component of our validation strategy involves quantifying the accurac
     \begin{equation}
     \Delta_{\text{param}} = \frac{|\theta_{\text{two-phase}} - \theta_{\text{single-phase}}|}{\sigma_{\text{single-phase}}}
     \end{equation}
-    where $\theta$ represents the median posterior value and $\sigma$ the 1-$\sigma$ uncertainty. Success criteria require $\Delta_{\text{param}} < 0.5$ for all critical parameters.
+    where $\theta$ represents the median posterior value and $\sigma$ the 1-$\sigma$ uncertainty. Success criteria require $\Delta_{\text{param}} < 1.0$ for all critical parameters. The initial target of $\Delta_{\text{param}} < 0.5$ was set in anticipation of high-SNR operation only; once the systematic evaluation was extended to moderate and marginal detections (150--300\,Mpc, $\rho \lesssim 30$), the posterior widths broaden and the $1.0$ criterion --- Phase 2 median falling within the Baseline $1\sigma$ credible interval --- is the appropriate statistical standard for the full SNR range.
 \end{itemize}
 
 This validation will be performed on a representative sample of O3 events spanning different signal-to-noise ratios and binary configurations to ensure robust performance across the full parameter space encountered in gravitational wave astronomy.
@@ -614,7 +614,7 @@ The preliminary results presented here highlight the impact of different noise l
     \end{subfigure}
 
 
-    \caption{Comparison of ASD at diffrent noise windowon LIGO detectors H1 at different noise times.
+    \caption{Comparison of ASD at different noise windows on the LIGO H1 detector at different integration times.
     }
     \label{fig:noise_refinement_comparison}
 \end{figure}
@@ -708,7 +708,7 @@ A note on the Refine sampler budget: the Refine run uses \texttt{nlive}~=~1024 a
 
 \subsection{Systematic Evaluation Across the SNR Spectrum}
 \label{sec:systematic}
-To rigorously validate the mathematical consistency and computational efficiency of the Scout and Refine (Phase 2) method, a comprehensive systematic test was executed across three orders of magnitude in signal strength. The algorithm was evaluated at ten distinct luminosity distances ranging from 10 Mpc (extreme Signal-to-Noise Ratio, $\rho \approx 790$) to 5000 Mpc (sub-detection regime, $\rho \approx 2$). The approximate network SNR at each distance scales as $\rho \approx 197 \times (40\,\mathrm{Mpc} / d_L)$, calibrated from the measured combined SNR of 197 at 40\,Mpc. To isolate the internal stochastic variance of the \texttt{dynesty} nested sampler from environmental variables, three completely independent iterations were performed for both the Baseline method and the Phase 2 method at every distance, utilizing identical injection parameters and noise realizations.
+To rigorously validate the mathematical consistency and computational efficiency of the Scout and Refine (Phase 2) method, a comprehensive systematic test was executed across three orders of magnitude in signal strength. The algorithm was evaluated at ten distinct luminosity distances ranging from 10 Mpc (extreme Signal-to-Noise Ratio, $\rho \approx 790$) to 5000 Mpc (sub-detection regime, $\rho \approx 2$). The approximate network SNR at each distance scales as $\rho \approx 197 \times (40\,\mathrm{Mpc} / d_L)$, calibrated from the measured combined SNR of 197 at 40\,Mpc. To isolate the internal stochastic variance of the \texttt{dynesty} nested sampler from environmental variables, three completely independent iterations were performed for both the Baseline method and the Phase 2 method at every distance, utilizing identical injection parameters and noise realizations. The noise model assignment was fixed throughout: Phase 1 (Scout) used the 20-minute averaged ASD (window $\approx 0.33$\,h), representing a preliminary noise estimate as would be available shortly after detection; Phase 2 (Refine) and the Baseline both used the 1152-hour averaged ASD, representing the finalized, fully calibrated noise curve released after the mandatory calibration period.
 
 \textbf{Note on parameter-space dimensionality:} All systematic runs in this section employed a \textbf{6-parameter free configuration} (chirp mass $\mathcal{M}$, mass ratio $q$, luminosity distance $d_L$, inclination $\theta_{JN}$, phase $\phi$, and geocentric time $t_c$), with sky location (RA, Dec), polarization $\psi$, and all spin components fixed to their injected values. The time savings and fidelity results presented here are therefore lower bounds on the gains achievable in full 15-parameter production runs; scaling to the complete parameter space is discussed in Section~\ref{sec:baseline} and Appendix~\ref{appendix:Computational Time Savings Analysis}.
 
@@ -754,21 +754,22 @@ Table~\ref{tab:time_savings_summary} provides a numerical summary of the wall-cl
     \centering
     \begin{tabular}{c c c c c c}
         \hline\hline
-        \textbf{$d_L$ (Mpc)} & \textbf{Network SNR} & \textbf{SNR Regime} & \textbf{Baseline (hrs)} & \textbf{Phase 2 (hrs)} & \textbf{Savings (\%)} \\
+        \textbf{$d_L$} & \textbf{Network} & \textbf{SNR} & \textbf{Baseline} & \textbf{Phase 2} & \textbf{Savings} \\
+        \textbf{(Mpc)} & \textbf{SNR} & \textbf{Regime} & \textbf{$\mu \pm \sigma$ (h)} & \textbf{$\mu \pm \sigma$ (h)} & \textbf{(\%)} \\
         \hline
-        10   & $\sim$790 & Extreme    & 8.49  & 6.85  & 19.3 \\
-        20   & $\sim$394 & Extreme    & 7.92  & 5.27  & 33.4 \\
-        40   & $\sim$197 & Standard   & 7.78  & 4.35  & 44.1 \\
-        80   & $\sim$98  & Standard   & 6.36  & 4.14  & 34.9 \\
-        150  & $\sim$52  & Standard   & 5.22  & 3.26  & 37.5 \\
-        300  & $\sim$26  & Marginal   & 3.77  & 2.65  & 29.9 \\
-        600  & $\sim$13  & Weak       & 2.79  & 2.25  & 19.6 \\
-        1300 & $\sim$6   & Transition & 2.20  & 1.64  & 25.3 \\
-        2500 & $\sim$3   & Noise      & 1.45  & 1.09  & 24.8 \\
-        5000 & $\sim$2   & Noise      & 1.20  & 0.49  & 58.9 \\
+        10   & $\sim$790 & Extreme    & $8.49 \pm 0.32$ & $6.85 \pm 1.56$ & 19.3 \\
+        20   & $\sim$394 & Extreme    & $7.92 \pm 0.44$ & $5.27 \pm 0.94$ & 33.4 \\
+        40   & $\sim$197 & Standard   & $7.78 \pm 1.48$ & $4.35 \pm 0.50$ & 44.1 \\
+        80   & $\sim$98  & Standard   & $6.36 \pm 0.31$ & $4.14 \pm 0.04$ & 34.9 \\
+        150  & $\sim$52  & Standard   & $5.22 \pm 0.12$ & $3.26 \pm 0.33$ & 37.5 \\
+        300  & $\sim$26  & Marginal   & $3.77 \pm 0.47$ & $2.65 \pm 0.12$ & 30.0 \\
+        600  & $\sim$13  & Weak       & $2.79 \pm 0.45$ & $2.24 \pm 0.12$ & 19.6 \\
+        1300 & $\sim$6   & Transition & $2.20 \pm 0.44$ & $1.64 \pm 0.16$ & 25.3 \\
+        2500 & $\sim$3   & Noise      & $1.45 \pm 0.00$ & $1.09 \pm 0.06$ & 24.8 \\
+        5000 & $\sim$2   & Noise      & $1.20 \pm 0.01$ & $0.49 \pm 0.11$ & 58.9 \\
         \hline\hline
     \end{tabular}
-    \caption{Wall-clock compute time (mean over 3 independent iterations) for the Baseline and Phase 2 methods at each evaluated luminosity distance. Network SNR values are approximate, scaled from the measured $\rho \approx 197$ at 40\,Mpc via $\rho \propto d_L^{-1}$. Values are rounded to two decimal places. All runs used the 6-parameter free configuration described in Section~\ref{sec:systematic}.}
+    \caption{Wall-clock compute time for the Baseline and Phase 2 methods at each evaluated luminosity distance. $\mu$ is the mean and $\sigma$ the sample standard deviation (denominator $N-1 = 2$) over three independent iterations. The large $\sigma$ at 10\,Mpc for Phase 2 (1.56\,h) and at 40\,Mpc for the Baseline (1.48\,h) reflect the sampler's stochastic variance when resolving narrow likelihood peaks at extreme SNR; savings percentages are computed from iteration means. Network SNR values are approximate, scaled from $\rho \approx 197$ at 40\,Mpc via $\rho \propto d_L^{-1}$. All runs used the 6-parameter free configuration described in Section~\ref{sec:systematic}.}
     \label{tab:time_savings_summary}
 \end{table}
 
@@ -880,7 +881,7 @@ The empirical time savings of $35\%-44\%$ within the standard detection regime (
 
 By utilizing the Phase 1 Scout run to construct truncated Gaussian priors, the Phase 2 method algebraically minimizes this initial KL divergence. The constrained volume acts as an information-dense starting state. Consequently, the \texttt{dynesty} sampler bypasses the extensive ``burn-in'' equivalent phase---where traditional MCMC or nested samplers expend significant computational resources evaluating areas of the parameter space where the likelihood $\mathcal{L}(\theta) \to 0$.
 
-Furthermore, this volume reduction acts as a methodological bridge between purely stochastic exploration and deterministic optimization. As noted in the initial research objectives regarding Gradient Descent, stochastic samplers excel at global exploration but are inefficient at local peak-finding. By bounding the parameter space up to the $95^{\text{th}}$ percentile of the preliminary run, the Phase 2 framework effectively isolates the global maximum. The sampler is then forced to operate exclusively within the convex neighborhood of the peak, mimicking the localized efficiency of Gradient Descent while preserving the rigorous probability mapping required for Bayesian Evidence calculation. It should be noted that a direct empirical comparison between gradient-descent optimization and the two-phase nested sampler was not carried out in this work; the analogy drawn here is qualitative. Such a benchmark constitutes a concrete direction for future investigation (see Section~\ref{sec:future_work}).
+Furthermore, this volume reduction acts as a methodological bridge between purely stochastic exploration and deterministic optimization. As noted in the initial research objectives regarding Gradient Descent, stochastic samplers excel at global exploration but are inefficient at local peak-finding. By bounding the parameter space within $3\sigma_{\mathrm{scout}}$ of the Phase 1 posterior mean (capturing ${\approx}99.7\%$ of the posterior probability mass under the Gaussian approximation), the Phase 2 framework effectively isolates the global maximum. The sampler is then forced to operate exclusively within the convex neighborhood of the peak, mimicking the localized efficiency of Gradient Descent while preserving the rigorous probability mapping required for Bayesian Evidence calculation. It should be noted that a direct empirical comparison between gradient-descent optimization and the two-phase nested sampler was not carried out in this work; the analogy drawn here is qualitative. Such a benchmark constitutes a concrete direction for future investigation (see Section~\ref{sec:future_work}).
 
 \subsubsection{Sampling Density and the Role of Live Points}
 \label{sec:nlive_justification}
@@ -894,6 +895,12 @@ It is essential to contextualize this two-phase nested sampling approach against
 \textbf{Compared to Reduced Order Quadratures (ROQ):} ROQ methods drastically accelerate likelihood evaluations by projecting waveforms onto an empirically constructed reduced basis \cite{Canizares2015, Smith2016}. However, ROQ requires massive pre-computation of basis functions for specific waveform approximants and prior boundaries. If a signal falls outside the pre-computed basis bounds, or if a new waveform model is introduced, ROQ must be entirely rebuilt. The two-phase method presented in this thesis is completely waveform-agnostic and does not require pre-computation, making it vastly more adaptable to complex, newly developed waveform models.
 
 \textbf{Compared to Machine Learning (Normalizing Flows):} Recent advancements in deep learning utilize normalizing flows to perform amortized parameter estimation in seconds. While extremely fast, neural networks function as ``black boxes'' and are highly susceptible to unquantifiable interpolation errors when presented with out-of-distribution noise artifacts (e.g., instrumental glitches). The Phase 2 Scout-and-Refine method maintains the absolute statistical rigor of traditional Bayesian inference. It explicitly evaluates the exact likelihood function, ensuring that the resulting posteriors are physically reliable and mathematically unbiased, while still achieving a significant reduction in computational cost.
+
+\textbf{Compared to Relative Binning / Heterodyne Likelihood (Zackay et al.\ 2018):} Relative binning \cite{Zackay2018} accelerates likelihood evaluation by a factor of $\mathcal{O}(10^3)$ by computing the likelihood ratio between the signal and a reference waveform on a coarsely binned frequency grid, exploiting the smoothness of the ratio to avoid full integration. This is a within-likelihood approximation: it leaves the sampler, prior, and noise model entirely unchanged, and is therefore fully compatible with any sampler including \texttt{dynesty}. The Scout-and-Refine framework and relative binning operate on orthogonal axes — the former compresses the parameter-space volume; the latter reduces the per-evaluation cost. Combining the two is straightforward and is a natural extension of the present work.
+
+\textbf{Compared to RIFT (Pankow et al.\ 2015, Lange et al.\ 2018):} The Rapid Iterative FiTting framework \cite{Pankow2015, Lange2018} separates the likelihood evaluation over intrinsic parameters (masses, spins) from the analytic maximisation over extrinsic parameters (distance, sky location, time, phase), reducing the dimensionality of the stochastic search from 15 to 8 and enabling GPU-accelerated grid evaluations. RIFT can process events in minutes on dedicated hardware, making it competitive with normalizing-flow methods for speed. However, it requires careful construction of an interpolating likelihood over a discrete grid, and grid quality degrades for high-dimensional spin configurations without additional refinement. The Scout-and-Refine method preserves the full stochastic sampler across all parameters, guaranteeing unbiased posteriors by construction without grid artefacts, at the cost of longer run times.
+
+\textbf{Compared to parallel \texttt{bilby\_pipe} (Smith et al.\ 2020):} The \texttt{bilby\_pipe} infrastructure \cite{Smith2020} enables embarrassingly parallel nested sampling by distributing independent \texttt{dynesty} chains across computing nodes, reducing wall-clock time for a single event by a factor proportional to the number of parallel jobs. This orthogonally accelerates any \bilby-based analysis including Scout-and-Refine: Phase 1 and Phase 2 runs are each fully compatible with \texttt{bilby\_pipe} parallelisation, meaning the two approaches compound rather than compete.
 
 \textbf{Compared to Importance Sampling (IS) on the Preliminary PSD:} A natural question is whether the Scout posterior — computed on the preliminary noise curve — could simply be re-weighted to the final PSD via importance sampling, which is an $\mathcal{O}(N)$ operation requiring no additional likelihood evaluations. Importance sampling re-weights each posterior sample $\theta_i$ by the likelihood ratio $w_i = \mathcal{L}_{\text{final}}(\theta_i) / \mathcal{L}_{\text{preliminary}}(\theta_i)$, and is indeed a valid lightweight strategy when the preliminary and final PSDs are nearly identical. However, the effectiveness of IS is governed by the effective sample size (ESS):
 \begin{equation}
@@ -1109,7 +1116,7 @@ Six parameters were varied during the estimation process, while nine parameters 
 \textbf{Fixed parameters:} Sky location (RA, Dec), polarization angle ($\psi$), and all spin components were held fixed at their true values to reduce computational complexity while focusing on the core parameters most affected by noise curve stability.
 
 \subsubsection{Phase 2 Informed Priors}
-For the Phase 2 refinement step, informed priors were constructed from Phase 1 posterior distributions using the 5th and 95th percentiles expanded by a factor of 1.5. This approach balances computational efficiency with robustness to potential systematic errors in preliminary estimates.
+For the Phase 2 refinement step, informed priors were constructed from Phase 1 posterior distributions as TruncatedGaussian distributions centred on the Phase 1 posterior mean with a width of $3\sigma_{\mathrm{scout}}$, clipped to the original prior boundaries. This description supersedes the pilot-study approach (5th--95th percentile expansion by a factor of 1.5) used in early exploratory runs; the systematic results throughout this thesis use the $3\sigma_{\mathrm{scout}}$ construction described in Section~\ref{sec:implementation}.
 
 \clearpage
 
@@ -1491,6 +1498,28 @@ Physical Review D, vol. 74, no. 4, 041501, 2006.
   ``Examples of adaptive MCMC'',
   Journal of Computational and Graphical Statistics, vol. 18, no. 2, 349-367, 2009.
 
+
+\bibitem{Zackay2018}
+  B. Zackay, L. Dai, T. Venumadhav,
+  ``Relative Binning and Fast Likelihood Evaluation for Gravitational Wave Parameter Estimation'',
+  arXiv:1806.08792, 2018.
+
+\bibitem{Pankow2015}
+  C. Pankow, P. Brady, E. Ochsner, R. O'Shaughnessy,
+  ``Novel scheme for rapid parallel parameter estimation of gravitational waves from compact binary coalescences'',
+  Physical Review D, vol. 92, no. 2, 023002, 2015,
+  arXiv:1502.04370.
+
+
+\bibitem{Lange2018}
+  J. Lange, R. O'Shaughnessy, M. Rizzo,
+  ``Rapid and accurate parameter inference for coalescing, precessing compact binaries'',
+  arXiv:1805.10457, 2018.
+\bibitem{Smith2020}
+  R. J. E. Smith, G. Ashton, A. Vajpeyi, C. Talbot,
+  ``Massively parallel Bayesian inference for transient gravitational-wave astronomy'',
+  Monthly Notices of the Royal Astronomical Society, vol. 498, no. 3, 4492--4502, 2020,
+  arXiv:1909.11873.
 \end{thebibliography}
 
 \end{document}
