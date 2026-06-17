@@ -212,11 +212,16 @@ def run_pe(asd_files, label, outdir, informed_priors=None, custom_injection_para
             sampler_settings = {'npoints': 2048, 'walks': 100}
             dlogz_val = 0.1
     else:
-        # Phase 2: Refined
-        print("--- PHASE 2: REFINED RUN (High Precision) ---")
-        priors.update(informed_priors) # <--- THE FIX: Updates only the refined ones!
-        sampler_settings = {'npoints': 1024, 'walks': 50}
-        dlogz_val = 0.1
+        # Phase 2 family: informed priors are supplied.
+        priors.update(informed_priors)  # <--- THE FIX: Updates only the refined ones!
+        if 'matched_budget' in label.lower():
+            print("--- MATCHED-BUDGET REFINED (Baseline budget + Compressed priors) ---")
+            sampler_settings = {'npoints': 2048, 'walks': 100}
+            dlogz_val = 0.1
+        else:
+            print("--- PHASE 2: REFINED RUN (High Precision) ---")
+            sampler_settings = {'npoints': 1024, 'walks': 50}
+            dlogz_val = 0.1
     
     # Set up likelihood
     likelihood = bilby.gw.GravitationalWaveTransient(
