@@ -8,18 +8,22 @@ Each item is self-contained so it can be opened as its own chat.
 
 ---
 
+## Status Summary (last updated)
+
+**Closed:** A1, A6, A11, B1, plus the conclusion-paragraph multi-messenger touch-up.
+**Open — text:** A2, A3, A4, A5, A7, A8, A9, A10, A12, A13, A14.
+**Open — code:** B2, B3, B4, B5, B6, B7, B8, B9.
+
+**Next-up recommendation:** A2 (formal reweighted-evidence estimator) is the highest-leverage text-only item left; B3 (matched-budget control) is the most decisive remaining code experiment — kick it off in the background while you write A2/A3.
+
+---
+
 ## Track A — Text-Only Fixes (do in parallel with code)
 
 Ordered by impact on the defense, not by time. Each is ~1–4 hours of writing/citation work.
 
-### A1. Reframe the motivating premise (HIGH PRIORITY)
-The "6-month calibration delay" framing is the single biggest exposure. Current text implies LIGO embargoes PE until final calibration; in reality low-latency pipelines run within hours of detection on preliminary PSDs.
-
-**Action:**
-- Read Biscoveanu et al. 2020 (PRD 102, 023008) carefully and engage with it explicitly.
-- Read LIGO calibration uncertainty papers (e.g., Sun et al. 2020 / Vitale et al. 2021) and quote actual preliminary-vs-final PSD differences (typically <5% amplitude, <few degrees phase).
-- Rewrite §1 and §3 to either (a) reframe around "early-data PE with subsequent PSD refinement" — a real and defensible problem — or (b) explicitly limit claims to the catalog re-analysis use case where calibration *does* change before re-release.
-- Remove or weaken the "18-month catalog delay = calibration-limited" assertion.
+### A1. Reframe the motivating premise (HIGH PRIORITY) — ✅ DONE
+The "6-month calibration delay" framing was the single biggest exposure. Rewritten around the low-latency-to-catalog re-analysis duplication, citing Chaudhary 2024, Sun 2020, Biscoveanu 2020.
 
 ### A2. Write down the formal reweighted-evidence estimator
 The Bayesian rigor is currently hand-waved ("Importance Re-weighting of the Phase 2 evidence").
@@ -30,7 +34,7 @@ The Bayesian rigor is currently hand-waved ("Importance Re-weighting of the Phas
 - Address the "use the data twice" concern explicitly.
 
 ### A3. Justify the 3σ_scout truncation
-"3σ captures 99.7% under Gaussian" undercuts itself — the whole reason to sample is non-Gaussianity.
+"3σ captures 99.7% under Gaussian" undercuts itself — the whole reason to sample is non-Gaussianity. §7.1 still contains this line.
 
 **Action:**
 - Argue empirically: show distribution of Phase 1 posterior shapes (Gaussianity check via skew/kurtosis or KS test).
@@ -51,11 +55,8 @@ The thesis does not differentiate against `bilby_pipe`'s existing prior-tuning w
 - Add 1 paragraph in §7.2 explicitly contrasting Scout-and-Refine with the pilot/restart features already in `bilby_pipe` (Smith et al. 2020).
 - Identify what is actually new: the institutional framing? The systematic SNR sweep? The control experiment? Be precise.
 
-### A6. Remove or qualify multi-messenger / sky-localization claims
-§7.5 sells faster sky maps. Sky was fixed in every systematic run.
-
-**Action:**
-- Either remove §7.5, or replace with "the framework is *expected to* yield benefits for sky localization, pending the validation reported in §B4 / B5" — and keep it only if you run B4.
+### A6. Remove or qualify multi-messenger / sky-localization claims — ✅ DONE
+§7.5 retitled "Potential for Multi-Messenger Astrophysics" and explicitly flagged as conjectural. Conclusion paragraph also tightened to match.
 
 ### A7. Quantify Phase 1 wall-clock from existing log files
 Phase 1 cost is not reported anywhere. This is text-only if logs already exist.
@@ -81,16 +82,13 @@ Currently ambiguous. ln(BF) ≈ 3×10⁵ at 10 Mpc suggests zero-noise injection
 - If sampled-noise: confirm that the *same* noise realization was reused across iterations (otherwise σ values comingle two different sources of variance).
 
 ### A10. Address the gradient-descent hypothesis explicitly
-Promised in §4 hypotheses; relegated to §7.7 future work without comment.
+Promised in §4 hypotheses; relegated to §7.7 future work without comment. Partially addressed in §7.1 ("the analogy drawn here is qualitative"), but the §4 hypothesis itself is still in place without a forward pointer.
 
 **Action:**
-- Add 1 paragraph stating that the gradient-descent comparison was scoped out of this thesis and why (limited time, single-supervisor MSc, focus on nested-sampling framework). Keep it honest.
+- Add 1 paragraph (or 1 sentence in §4) stating that the gradient-descent comparison was scoped out of this thesis and why (limited time, single-supervisor MSc, focus on nested-sampling framework). Keep it honest. Point forward to §7.7.
 
-### A11. Improve the 1300 Mpc relative-error explanation
-Currently called a "mathematical artifact" — true but uninformative.
-
-**Action:**
-- Replace relative error with a noise-floor-normalized metric: e.g., `|Δ ln Z| / σ_intra-run` or `|Δ ln Z| / ln(BF_threshold)`. Show this metric is small everywhere.
+### A11. Improve the 1300 Mpc relative-error explanation — ✅ DONE
+Replaced with R = |Δ ln BF| / σ_pooled; figure regenerated; §6.4.1 and §7.6.3 both reconciled to the new metric.
 
 ### A12. Tighten literature comparison §7.2
 Currently defensive ("not directly competitive") rather than analytical.
@@ -110,7 +108,7 @@ You're on a pre-2.x version. Current `bilby` has improved samplers and JIT-compi
 
 **Action:**
 - Add 1 paragraph in §6.3 with the t-statistic for the "44% savings ≠ 0" claim. Document the wide CI.
-- If you do B2/B3, this becomes moot.
+- If you do B5 (injection campaign), this becomes moot because you'll have an N=20 distribution.
 
 ---
 
@@ -118,10 +116,8 @@ You're on a pre-2.x version. Current `bilby` has improved samplers and JIT-compi
 
 Run-time estimates assume your Core i7-10700KF (8 cores), based on the Phase 2 ≈4.3h-at-40-Mpc reference. Adjust if you have access to a cluster.
 
-### B1. [~½ day] Re-analyze existing data for the transition-boundary metric
-**Run-time:** No new sampling. Post-processing of existing log files.
-**What:** Compute a noise-floor-normalized BF metric (see A11) from existing posteriors. Replace Figure 9 bottom panel.
-**Deliverable:** Updated Figure with new metric; 1-paragraph caption.
+### B1. [~½ day] Re-analyze existing data for the transition-boundary metric — ✅ DONE
+New `figure9_noise_floor.png` with three panels (ln BF, signed Δ, R). Replaces the relative-error metric throughout §6.4.1.
 
 ### B2. [~1 day] Phase 1 cost extraction + reporting
 **Run-time:** None — read existing run directories.
@@ -141,17 +137,17 @@ Run-time estimates assume your Core i7-10700KF (8 cores), based on the Phase 2 �
 ### B4. [~2–3 days] Sky-localization free run (single distance)
 **Run-time:** 10D (add RA, Dec, ψ, $\iota$ untied from current θ_JN treatment) costs ~2× the 6D run. ≈ 8–16h × 3 × 2 methods = 50–100h.
 **What:** At 150 Mpc, repeat Baseline + Phase 2 with sky position free.
-**Why:** Validates (or kills) the multi-messenger claims in §7.5.
+**Why:** Validates (or kills) the multi-messenger claim now flagged conjectural in §7.5 and the Conclusion.
 **Setup:**
 - Add RA (uniform), Dec (cos), ψ (uniform) to free parameters.
 - Use same waveform `IMRPhenomXPHM`, 150 Mpc injection.
 - N=3 each.
-**Deliverable:** New subsection in §6.4 with sky-area at 90% confidence, plus an updated corner plot. Either confirms §7.5 or forces you to remove it.
+**Deliverable:** New subsection in §6.4 with sky-area at 90% confidence, plus an updated corner plot. Either confirms §7.5 (and lets you de-conjecture it) or forces you to keep the disclaimer permanently.
 
 ### B5. [~3–5 days] Small injection campaign at 150 Mpc (statistical generalization)
 **Run-time:** 20 injections × 2 methods × ~4h ≈ 160 CPU-hours. With N=1 per condition this fits in 4–5 days.
 **What:** Sample 20 injections from your BBH prior at d_L = 150 Mpc, varying q ∈ [0.3, 1.0] and χ_eff ∈ [–0.5, 0.5], aligned spins only. Run both Baseline and Phase 2.
-**Why:** First evidence that the framework generalizes off the single test point. Enables a PP-plot-style coverage statement.
+**Why:** First evidence that the framework generalizes off the single test point. Enables a PP-plot-style coverage statement. Also closes A14.
 **Setup:**
 - Sample (q, χ_eff) on a 4×5 grid or quasi-random sequence.
 - Use aligned-spin waveform (`IMRPhenomD` or `IMRPhenomXAS`) to keep cost down.
@@ -201,18 +197,18 @@ Run-time estimates assume your Core i7-10700KF (8 cores), based on the Phase 2 �
 ## Suggested Order of Operations
 
 **Week 1 (now):**
-- Start B3 (matched-budget control) running in background — most decisive experiment.
-- In parallel write A1 (reframe motivation), A2 (formal estimator), A7 (Phase 1 cost — from logs).
+- Start B3 (matched-budget control) running in background — most decisive remaining experiment.
+- In parallel write A2 (formal estimator), A3 (3σ justification), A7 (Phase 1 cost — from logs).
 
 **Week 2:**
 - B3 completes → write new §6.4.4.
 - Start B5 (injection campaign) running.
-- Write A3, A5, A6, A8, A9, A11, A12.
+- Write A5, A8, A9, A12.
 
 **Week 3:**
-- B5 completes → write §6.5.
-- Start B6 (15-parameter run) or B4 (sky-free) depending on what's more defensible.
-- Finalize A4, A10, A13, A14.
+- B5 completes → write §6.5 (this also closes A14).
+- Start B6 (15-parameter run) or B4 (sky-free) depending on what your supervisor weighs more heavily.
+- Finalize A4, A10, A13.
 
 **Week 4 (stretch):**
 - B7 (real event) if time allows.
@@ -222,10 +218,10 @@ Run-time estimates assume your Core i7-10700KF (8 cores), based on the Phase 2 �
 
 ## Minimum Acceptable Defense Set
 
-If you only do **one** code experiment, do **B3** (matched-budget control). It is the single most consequential test for the credibility of the headline result.
+If you only do **one** more code experiment, do **B3** (matched-budget control). It is the single most consequential remaining test for the credibility of the headline result.
 
-If you can do **two**, add **B5** (injection campaign).
+If you can do **two**, add **B5** (injection campaign) — this also closes the A14 statistics caveat.
 
-If you can do **three**, add **B6** (15D) or **B4** (sky-free) — whichever your supervisor weighs more heavily.
+If you can do **three**, add **B6** (15D) or **B4** (sky-free) — whichever your supervisor weighs more heavily. B4 lets you de-conjecture the multi-messenger section; B6 lets you de-conjecture the 15-parameter extrapolation.
 
-The remaining text-only fixes (Track A) are non-negotiable regardless of how much code you run.
+The remaining open Track-A items are non-negotiable regardless of how much code you run.
