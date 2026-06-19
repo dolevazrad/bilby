@@ -29,8 +29,8 @@ PARAM_LABELS = {
     'chirp_mass': r'$\mathcal{M}$',
     'mass_ratio': r'$q$',
     'luminosity_distance': r'$d_L$',
-    'a_1': r'$a_1$',
-    'a_2': r'$a_2$',
+    'chi_1': r'$\chi_1$',
+    'chi_2': r'$\chi_2$',
     'theta_jn': r'$\theta_{JN}$',
 }
 

@@ -67,8 +67,8 @@ DELTA_PARAMS = (
     'chirp_mass',
     'mass_ratio',
     'luminosity_distance',
-    'a_1',
-    'a_2',
+    'chi_1',
+    'chi_2',
     'theta_jn',
 )
 
@@ -89,18 +89,15 @@ def build_injection_grid(n=N_INJECTIONS, seed=RANDOM_SEED):
 
     injections = []
     for q, chi_eff in zip(qs, chi_effs):
-        a_mag = float(abs(chi_eff))
-        tilt = 0.0 if chi_eff >= 0 else float(np.pi)
+        # Aligned-spin parameterisation: bilby's converter maps chi_i to
+        # a_i = |chi_i|, tilt_i = 0 or pi, phi_12 = phi_jl = 0, which is what
+        # IMRPhenomXAS requires (zero transverse spin components).
         injections.append({
             'chirp_mass': 30.0,
             'mass_ratio': float(q),
             'luminosity_distance': DISTANCE_MPC,
-            'a_1': a_mag,
-            'a_2': a_mag,
-            'tilt_1': tilt,
-            'tilt_2': tilt,
-            'phi_12': 0.0,
-            'phi_jl': 0.0,
+            'chi_1': float(chi_eff),
+            'chi_2': float(chi_eff),
             'theta_jn': 0.8,
             'phase': 1.0,
             'ra': 1.5,
@@ -113,8 +110,16 @@ def build_injection_grid(n=N_INJECTIONS, seed=RANDOM_SEED):
 
 
 def get_broad_priors(injection_params):
-    """The Baseline broad priors (matches the rest of the thesis pipeline)."""
-    priors = bilby.gw.prior.BBHPriorDict()
+    """Broad priors for the aligned-spin B5 campaign.
+
+    Uses ``chi_1`` and ``chi_2`` in place of the precessing spin parameters
+    (``a_1``, ``a_2``, ``tilt_1``, ``tilt_2``, ``phi_12``, ``phi_jl``).
+    Bilby's ``convert_to_lal_binary_black_hole_parameters`` maps each
+    ``chi_i`` to ``a_i = |chi_i|``, ``tilt_i = 0`` (if chi >= 0) or ``pi``
+    (if chi < 0), and pins ``phi_12 = phi_jl = 0``. This guarantees zero
+    transverse spin components, which is required by ``IMRPhenomXAS``.
+    """
+    priors = bilby.gw.prior.BBHPriorDict(aligned_spin=True)
     priors['chirp_mass'] = Uniform(25.0, 35.0, name='chirp_mass')
     priors['mass_ratio'] = Uniform(0.25, 1.0, name='mass_ratio')
     priors['luminosity_distance'] = Uniform(1.0, 10000.0, name='luminosity_distance')
@@ -123,17 +128,14 @@ def get_broad_priors(injection_params):
         injection_params['geocent_time'] + 0.1,
         name='geocent_time',
     )
-    priors['phase'] = Uniform(0, 2 * np.pi, name='phase')
+    priors['phase'] = Uniform(0, 2 * np.pi, name='phase', boundary='periodic')
     priors['theta_jn'] = Sine(name='theta_jn')
-    priors['ra'] = Uniform(0, 2 * np.pi, name='ra')
+    priors['ra'] = Uniform(0, 2 * np.pi, name='ra', boundary='periodic')
     priors['dec'] = Cosine(name='dec')
-    priors['psi'] = Uniform(0, np.pi, name='psi')
-    priors['a_1'] = Uniform(0, 0.99, name='a_1')
-    priors['a_2'] = Uniform(0, 0.99, name='a_2')
-    priors['tilt_1'] = Sine(name='tilt_1')
-    priors['tilt_2'] = Sine(name='tilt_2')
-    priors['phi_12'] = Uniform(0, 2 * np.pi, name='phi_12', boundary='periodic')
-    priors['phi_jl'] = Uniform(0, 2 * np.pi, name='phi_jl', boundary='periodic')
+    priors['psi'] = Uniform(0, np.pi, name='psi', boundary='periodic')
+    # Flat aligned-spin priors (override AlignedSpin defaults for simplicity).
+    priors['chi_1'] = Uniform(-0.99, 0.99, name='chi_1', latex_label=r'$\chi_1$')
+    priors['chi_2'] = Uniform(-0.99, 0.99, name='chi_2', latex_label=r'$\chi_2$')
     return priors
 
 
