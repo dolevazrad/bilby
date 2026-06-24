@@ -224,8 +224,12 @@ def run_pe_aligned(asd_files, label, outdir, injection_params, informed_priors=N
             dlogz_val = 0.1
     else:
         priors.update(informed_priors)
-        print('--- PHASE 2: REFINE (Informed priors, reduced budget) ---')
-        sampler_settings = {'npoints': 1024, 'walks': 50}
+        if 'matched_budget' in label.lower():
+            print('--- MATCHED-BUDGET REFINE (Baseline budget + Compressed priors) ---')
+            sampler_settings = {'npoints': 2048, 'walks': 100}
+        else:
+            print('--- PHASE 2: REFINE (Informed priors, reduced budget) ---')
+            sampler_settings = {'npoints': 1024, 'walks': 50}
         dlogz_val = 0.1
 
     likelihood = bilby.gw.GravitationalWaveTransient(
