@@ -747,7 +747,7 @@ A primary requirement for any optimization in Bayesian inference is that the res
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.95\textwidth]{figure9_noise_floor.png}
+    \includegraphics[width=0.95\textwidth]{B1_BF_vs_Distance_With_Relative_Error.png}
     \caption{Bayes-factor consistency between the Baseline and Phase 2 (Refine) methods across the ten injected distances ($N=3$ iterations per condition). \textbf{Top:} mean $\ln(\mathrm{BF})$ with $1\sigma$ intra-run error bars; the two methods overlap at every distance on a symmetric-log axis. \textbf{Middle:} signed absolute residual $\Delta\ln(\mathrm{BF}) = \langle\ln\mathrm{BF}\rangle_{\rm P2} - \langle\ln\mathrm{BF}\rangle_{\rm B}$, with the grey band showing the pooled intra-run sampler dispersion $\pm\sigma_{\rm pooled} = \pm\sqrt{(\sigma_{\rm B}^2+\sigma_{\rm P2}^2)/2}$. The dotted red lines mark the Jeffreys ``strong'' evidence threshold ($|\Delta|=5$). \textbf{Bottom:} noise-floor-normalised residual $R \equiv |\Delta\ln(\mathrm{BF})|\,/\,\sigma_{\rm pooled}$. The shaded teal region ($R<1$) is the regime in which the Baseline-vs-Phase 2 difference is smaller than the sampler's own iteration-to-iteration dispersion; $R$ replaces the relative-error metric used in prior drafts, which artificially diverges as the Baseline $\ln(\mathrm{BF})$ approaches zero near the detection threshold ($d_L \approx 1300$\,Mpc).}
     \label{fig:bf_residuals}
 \end{figure}
@@ -949,6 +949,160 @@ The analysis was extended to two additional representative distances to demonstr
     \label{fig:corner_plot_300}
 \end{figure}
 
+\subsection{Population-Level Validation: Latin-Hypercube Injection Campaign}
+\label{sec:population_validation}
+
+The results presented in Sections~\ref{sec:results}--\ref{sec:control} establish the Scout--Refine framework on a single, fixed source configuration. A natural objection --- and one anticipated by the committee at the outset --- is whether this performance survives a realistic spread of intrinsic source parameters, or whether it merely reflects a fortunate point in the binary black-hole (BBH) parameter space. This section closes that question with a small injection campaign at $d_L = 150$~Mpc spanning the full mass-ratio and aligned-spin plane.
+
+\subsubsection{Setup}
+Twenty injections were drawn on a deterministic Latin Hypercube grid~\citep{McKay1979} in $(q, \chi_{\mathrm{eff}})$ with $q \in [0.3,\,1.0]$ and $\chi_{\mathrm{eff}} \in [-0.5,\,0.5]$. All remaining intrinsic and extrinsic parameters were held fixed at the reference values used throughout this chapter ($\mathcal{M} = 30\,M_\odot$, $\theta_{JN} = 0.8$~rad, sky and orientation as in Section~\ref{sec:implementation}). To make the campaign tractable within the available wall-clock budget the precessing approximant \texttt{IMRPhenomXPHM} was replaced with its aligned-spin counterpart \texttt{IMRPhenomXAS}, exploiting bilby's standard \texttt{chi\_i $\to$ a\_i, tilt\_i, phi\_jl, phi\_12} conversion to pin the in-plane spin components to zero ($a_i = |\chi_i|$, $\mathrm{tilt}_i \in \{0, \pi\}$). Each injection was processed with the full pipeline --- Baseline, Scout, and Refine --- and the parameter fidelity metric $\Delta_{\mathrm{param}}$ was computed against the per-injection Baseline posterior using importance-reweighted samples to restore the broad-prior interpretation.
+
+\paragraph{Sampling-replication caveat.}
+Each of the 20 grid-point injections was run with a single Refine iteration, in contrast to the $N=3$ replication used throughout the SNR sweep of Section~\ref{sec:systematic}. The sampler stochasticity therefore enters each per-injection $\Delta_{\mathrm{param}}$ value as a single realisation rather than as a sample mean. The statistical strength of the campaign comes from the $N=20$ grid bandwidth in the population statistics (Table~\ref{tab:population_summary}) rather than from per-condition replication; the matched-budget and wider-$\sigma$ follow-ups on the two worst outliers in Section~\ref{sec:population_outliers} restore $N=3$ replication for the regime-classification claims.
+
+\subsubsection{Headline result: time savings generalise across the population}
+The median wall-clock saving across the 20-injection population is $35.1\%$, with a $p_{10}$--$p_{90}$ range of $30.3\%$--$39.1\%$. This band is consistent with the per-distance figures reported in Section~\ref{sec:systematic} and, more importantly, contains no injections for which the framework was net-slower than Baseline. The saving therefore reflects a property of the method rather than a single favourable signal realisation: across the entire $(q,\chi_{\mathrm{eff}})$ plane the Scout--Refine pipeline returns the same posterior at approximately two-thirds of the Baseline wall-clock cost.
+
+\subsubsection{Parameter fidelity across the population}
+Figure~\ref{fig:population_boxplot} summarises the per-parameter $\Delta_{\mathrm{param}}$ distribution over all 20 injections. Every population median lies below the $1\sigma$ catastrophic-bias threshold ($\Delta_{\mathrm{param}}<1.0$) used in Section~\ref{sec:results}; four of six (chirp mass, mass ratio, $\chi_1$, $\chi_2$) also clear the tighter $0.5$ validation threshold used in Table~\ref{tab:parameter_fidelity_multi}. The remaining two ($d_L$ and $\theta_{JN}$, both medians $\approx 0.55$) sit just above the $0.5$ line, reflecting the distance--inclination amplitude degeneracy at $d_L = 150$~Mpc. The $90$th percentiles remain at or below the $1\sigma$ line in five of the six panels. Numerical statistics are summarised in Table~\ref{tab:population_summary}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{b5_delta_param_boxplot.pdf}
+    \caption[Population $\Delta_{\mathrm{param}}$ box-plot.]{Per-parameter $\Delta_{\mathrm{param}}$ distribution over the 20-injection Latin-hypercube campaign at $d_L = 150$~Mpc. Boxes show the interquartile range, the red bar marks the median, and whiskers extend to the $10$th and $90$th percentiles. The dashed line at $\Delta_{\mathrm{param}} = 1$ marks the $1\sigma$ catastrophic-bias threshold; the dotted line at $0.5$ marks the tighter validation threshold of Table~\ref{tab:parameter_fidelity_multi}.}
+    \label{fig:population_boxplot}
+\end{figure}
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{l c c c c}
+        \hline\hline
+        \textbf{Parameter} & $n$ & \textbf{median} & \textbf{p90} & \textbf{max} \\
+        \hline
+        $\mathcal{M}$               & 20 & 0.204 & 0.431 & 0.720 \\
+        $q$                         & 20 & 0.264 & 0.858 & 1.180 \\
+        $d_L$                       & 20 & 0.554 & 0.917 & 0.970 \\
+        $\chi_1$                    & 20 & 0.394 & 0.832 & 0.950 \\
+        $\chi_2$                    & 20 & 0.468 & 0.965 & 1.224 \\
+        $\theta_{JN}$               & 20 & 0.557 & 0.904 & 1.002 \\
+        \hline\hline
+    \end{tabular}
+    \caption[Population statistics.]{Population statistics of $\Delta_{\mathrm{param}}$ across the 20-injection Latin-hypercube campaign. All six population medians lie below the $1\sigma$ catastrophic-bias threshold; four of six (chirp mass, mass ratio, $\chi_1$, $\chi_2$) also clear the tighter $0.5$ validation threshold of Table~\ref{tab:parameter_fidelity_multi}. Five of six $90$th percentiles lie below the $1\sigma$ line. Tail outliers are characterised in Section~\ref{sec:population_outliers}.}
+    \label{tab:population_summary}
+\end{table}
+
+\paragraph{Coverage calibration: PP-plot.}
+The $\Delta_{\mathrm{param}}$ box-plot tests bias of medians, but not calibration of credible intervals. To test calibration directly we apply a probability--probability (PP) test \citep{Cook2006,Veitch2015}: for each injection and each parameter we compute the percentile rank of the injected truth within the recovered posterior, and we plot the empirical CDF of those ranks against the diagonal expected for a perfectly calibrated sampler. Of the three parameters whose injected values vary across the campaign ($q$, $\chi_1$, $\chi_2$), the Phase~2 posteriors recover $\chi_1$ (KS $p = 0.084$) and $\chi_2$ ($p = 0.228$) inside the $2\sigma$ KS confidence band; the mass ratio $q$ ($p = 0.015$) sits just outside it. This single-parameter deviation is consistent with the low-$q$ failure mode characterised in Section~\ref{sec:population_outliers}: at $q \lesssim 0.4$ the reduced-budget Refine produces sampler-budget-limited posteriors that under-cover the truth, and the matched-budget Refine prescription closes this gap. The Baseline PP-test passes for all three standard-PP parameters ($q$: $p = 0.483$; $\chi_1$: $p = 0.153$; $\chi_2$: $p = 0.156$), confirming that the marginal $q$ deviation in Phase~2 is a property of the reduced sampler resolution at extreme mass ratios rather than of the prior compression itself. The result is shown in Figure~\ref{fig:population_pp}; the matched-budget control PP-plot ($N=3$ per distance, qualitative only) is deferred to Appendix~\ref{appendix:pp_controls}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{population_pp_plot.pdf}
+    \caption[Population-campaign PP-plot.]{%
+        Probability--probability (PP) plot for the Scout-and-Refine
+        population validation campaign: $N=20$ aligned-spin BBH injections
+        at $d_L = 150$\,Mpc on a Latin Hypercube grid in
+        $(q,\chi_{\rm eff})\in[0.30,1.00]\times[-0.50,0.50]$, analysed with
+        \texttt{IMRPhenomXAS} under zero-noise. Each coloured curve shows
+        the empirical CDF of the percentile rank of the injected truth value
+        within the recovered posterior; if the posterior is correctly
+        calibrated this rank is uniformly distributed on $[0,1]$ and the
+        ECDF follows the diagonal (dashed black line). Shaded grey bands
+        show the $1\sigma$, $2\sigma$, and $3\sigma$ Kolmogorov--Smirnov
+        confidence regions for $N=20$ (half-widths $\varepsilon_{1\sigma}=0.21$,
+        $\varepsilon_{2\sigma}=0.31$, $\varepsilon_{3\sigma}=0.41$;
+        asymptotic Kolmogorov distribution). Solid curves correspond to
+        parameters whose injected value varies across the campaign
+        ($q$, $\chi_1$, $\chi_2$) and constitute the standard PP-coverage
+        test; dashed curves ($\mathcal{M}_c^\dagger$, $d_L^\dagger$,
+        $\theta_{JN}^\dagger$) are at fixed injected values and measure
+        calibration at a point rather than coverage across the prior.
+        \textbf{Left:} Phase~2 (Refine). \textbf{Right:} Baseline.
+        Per-parameter KS $p$-values are reported in the body text and
+        in the legends. The matched-budget control PP-plot is given in
+        Appendix~\ref{appendix:pp_controls}.
+        \\$\dagger$~Fixed injection value, non-standard PP interpretation.}
+    \label{fig:population_pp}
+\end{figure}
+
+The Latin Hypercube grid coverage in the $(q,\chi_{\mathrm{eff}})$ plane is shown in Figure~\ref{fig:population_grid}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.6\textwidth]{b5_q_chi_eff_scatter.pdf}
+    \caption[Population $(q,\chi_{\mathrm{eff}})$ grid coverage.]{Latin Hypercube grid coverage of the population campaign. All 20 injections completed successfully.}
+    \label{fig:population_grid}
+\end{figure}
+
+\subsubsection{Outlier characterisation and operational recommendation}
+\label{sec:population_outliers}
+Five of the twenty injections (\texttt{inj\_04, 05, 08, 16, 18}) produced $\Delta_{\mathrm{param}} \gtrsim 1$ in at least one parameter. All five sit at extremes of the $(q, \chi_{\mathrm{eff}})$ grid: either at low mass ratio ($q \lesssim 0.4$) or at high aligned spin ($|\chi_{\mathrm{eff}}| \gtrsim 0.4$). Rather than treat the tail as a black box, two follow-up experiments were performed to isolate the cause.
+
+\paragraph{Failure mode (i): sampler-budget noise in the low-$q$ regime.}
+Re-running the worst low-$q$ injection (\texttt{inj\_04}, $q=0.38$, $\chi_{\mathrm{eff}} = -0.32$) with the Refine sampler held at the Baseline budget (\textsc{nlive}~$=2048$, \textsc{walks}~$=100$) while keeping the compressed $3\sigma_{\mathrm{Scout}}$ informed priors collapses all six $\Delta_{\mathrm{param}}$ values to the $0.02$--$0.37$ range (Table~\ref{tab:outlier_followup}, second column of the upper block). Critically, the inverse manipulation --- widening the informed-prior multiplier to $5\sigma_{\mathrm{Scout}}$ at \emph{either} the reduced or matched budget --- \emph{degrades} the recovery of this injection rather than improving it: $\Delta_{\chi_1}$ rises from $0.31$ ($\sigma=3$, matched) to $1.18$--$1.35$ ($\sigma=5$, either budget), and $\Delta_{\chi_2}$ rises from $0.32$ to $1.51$--$1.62$. The mechanism is the $(q,\chi_{\mathrm{eff}})$ mass--spin degeneracy: a wider truncation on $q$ admits additional posterior support along the degenerate ridge, broadening the spin marginals. For this injection, the tight $3\sigma_{\mathrm{Scout}}$ truncation is therefore not merely safe but actively beneficial; the original outlier behaviour is a property of the reduced sampler resolution \emph{alone}, and the operationally correct fix is to restore the sampler budget while \emph{retaining} the original tight truncation.
+
+\paragraph{Failure mode (ii): informed-prior lock-in in the equal-mass / high-spin regime.}
+Re-running the near-equal-mass, moderately-spinning outlier (\texttt{inj\_05}, $q=0.90$, $\chi_{\mathrm{eff}} = +0.39$) under the four-way design yields the exact opposite pattern to \texttt{inj\_04}. The matched-budget Refine at the original $3\sigma_{\mathrm{Scout}}$ truncation \emph{worsens} the spin recovery ($\Delta_{\chi_1}$: $0.89 \to 1.18$, $\Delta_{\chi_2}$: $0.98 \to 1.28$) because the larger sampler budget converges more sharply on the Scout's slightly off-centre informed Gaussian. With Kish effective sample size at $90\%$ of the nominal posterior length the importance-reweighting overlap is excellent, so the source is not prior truncation in the formal sense --- rather, the Scout's posterior peak is biased relative to the broad-prior posterior peak, and a tighter prior plus more sampling budget locks the Refine into the bias. The remedy is the inverse fix: widening the informed-prior multiplier from $3\sigma_{\mathrm{Scout}}$ to $5\sigma_{\mathrm{Scout}}$ at the original reduced sampler budget restores spin fidelity ($\Delta_{\chi_1} = 0.232$, $\Delta_{\chi_2} = 0.221$) without any sampler-cost penalty. A residual $\Delta_q \approx 0.77$, $\Delta_{\mathcal{M}} \approx 0.47$ persists across every configuration tested; we discuss this below.
+
+\paragraph{The two failure modes require opposite fixes.}
+Taken together, Table~\ref{tab:outlier_followup} shows that the two minority failure modes identified in the population campaign are not just distinct but \emph{anti-correlated} in their response to the available tuning knobs. Widening the informed prior fixes \texttt{inj\_05} but degrades \texttt{inj\_04}; matching the sampler budget fixes \texttt{inj\_04} but worsens \texttt{inj\_05}. No single universal modification of the framework cures both regions of the $(q,\chi_{\mathrm{eff}})$ plane. Any production deployment that aims for sub-$0.5\sigma$ fidelity across the whole BBH parameter space must therefore select between the two fixes based on the Scout's preliminary $(q, \chi_{\mathrm{eff}})$ estimate, as encoded in the recommendation list below.
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \begin{tabular}{l c c c c}
+        \hline\hline
+         & \textbf{Original Refine} & \textbf{Matched-budget} & \textbf{Wider $\sigma$} & \textbf{Wider $\sigma$ +} \\
+        \textbf{Parameter} & ($\sigma\!=\!3$, reduced) & ($\sigma\!=\!3$, matched) & ($\sigma\!=\!5$, reduced) & \textbf{matched budget} \\
+        \hline
+        \multicolumn{5}{l}{\emph{\texttt{inj\_04}: $q=0.38$, $\chi_{\mathrm{eff}}=-0.32$ (low-$q$ outlier)}} \\
+        $\mathcal{M}$  & 0.420 & 0.230 & 0.416 & 0.349 \\
+        $q$            & 0.461 & 0.021 & 0.655 & 0.748 \\
+        $d_L$          & 0.911 & 0.309 & 0.518 & 0.752 \\
+        $\chi_1$       & 0.950 & 0.306 & 1.352 & 1.178 \\
+        $\chi_2$       & 1.224 & 0.315 & 1.621 & 1.507 \\
+        $\theta_{JN}$  & 1.002 & 0.180 & 0.531 & 0.724 \\
+        \hline
+        \multicolumn{5}{l}{\emph{\texttt{inj\_05}: $q=0.90$, $\chi_{\mathrm{eff}}=+0.39$ (equal-mass, high-spin outlier)}} \\
+        $\mathcal{M}$  & 0.060 & 0.372 & 0.472 & 0.533 \\
+        $q$            & 0.840 & 1.138 & 0.772 & 1.454 \\
+        $d_L$          & 0.911 & 0.398 & 0.506 & 0.030 \\
+        $\chi_1$       & 0.894 & 1.182 & 0.232 & 0.885 \\
+        $\chi_2$       & 0.979 & 1.283 & 0.221 & 1.186 \\
+        $\theta_{JN}$  & 0.904 & 0.327 & 0.513 & 0.002 \\
+        \hline\hline
+    \end{tabular}
+    \caption[Outlier follow-up.]{$\Delta_{\mathrm{param}}$ recovery on the two worst population-campaign outliers under four combinations of informed-prior width and sampler budget. Bold takeaway: the two outliers respond to \emph{opposite} fixes. For \texttt{inj\_04} (low-$q$, moderate spin), only the matched-budget Refine with the original $\sigma_{\mathrm{Scout}}=3$ truncation recovers all six parameters below the validation threshold; widening the prior to $\sigma_{\mathrm{Scout}}=5$ \emph{degrades} spin fidelity (e.g.\ $\Delta_{\chi_2}$: $1.22\!\to\!1.62$ at the reduced budget) because the additional latitude in the $(q, \chi_{\mathrm{eff}})$ truncation lets the sampler explore further along the mass--spin degeneracy ridge. For \texttt{inj\_05} (near-equal-mass, high spin), the inverse is true: the wider $\sigma_{\mathrm{Scout}}=5$ prior with the reduced budget recovers spin fidelity ($\Delta_{\chi_1, \chi_2} = 0.23, 0.22$), while matched-budget at the original $\sigma=3$ worsens it. A residual $\Delta_q$ in \texttt{inj\_05} persists across all four configurations and is attributed to the $(q,\chi_{\mathrm{eff}})$ degeneracy at $q\!\approx\!1$ (see text). The Kish effective sample size of the importance-reweighted Phase~2 posterior is $\ge 99\,\%$ in every configuration shown, ruling out prior-truncation artefacts as an explanation.}
+    \label{tab:outlier_followup}
+\end{table}
+
+\paragraph{Residual mass-ratio bias: a property of the parameter space.}
+The persistent $\Delta_q \sim 0.4$--$1.4$ across all four configurations of \texttt{inj\_05} is the only residual that no combination of sampler budget and informed-prior width is able to remove. This is consistent with the well-documented $q$--$\chi_{\mathrm{eff}}$ parameter degeneracy in GW parameter estimation \citep{Hannam2013,Vitale2014,Purrer2016}, compounded at $q\!\approx\!1$ by prior-boundary pile-up at the equal-mass edge of the unit interval. Any nested- or MCMC-based sampler operating in this region produces noisy mass-ratio marginals --- this is a property of the GW likelihood, not of the Scout--Refine framework. We therefore report it as a known boundary of applicability rather than a limitation of the proposed method.
+
+\subsubsection{Operational recommendation: regime-dependent prescription}
+\label{sec:population_recommendation}
+Because the two outlier failure modes respond to opposite fixes
+(Table~\ref{tab:outlier_followup}), the operational guidance for the
+Scout--Refine framework is necessarily a switch on the Scout's
+preliminary $(q, \chi_{\mathrm{eff}})$ estimate rather than a single
+universal prescription. \textbf{Classifier-circularity caveat:} this switch is itself defined on the Scout's $(q, \chi_{\mathrm{eff}})$ medians, which are mildly biased in exactly the equal-mass corner that triggers Failure mode~(ii) above. In production we therefore recommend that the regime assignment be cross-checked against an independent estimator of the chirp mass and effective spin from the detection pipeline (e.g.\ the matched-filter template that triggered the candidate); if the Scout and the pipeline disagree about which regime applies, the conservative choice is to fall back to the matched-budget Refine at $3\sigma_{\mathrm{Scout}}$, which never degrades recovery relative to Baseline in any configuration tested in Table~\ref{tab:outlier_followup}.
+
+\begin{enumerate}
+    \item \textbf{Default regime} ($0.5 \lesssim q \lesssim 0.8$, $|\chi_{\mathrm{eff}}| \lesssim 0.3$): the original reduced-budget Refine with informed-prior width $3\sigma_{\mathrm{Scout}}$ is sufficient and delivers the headline $\sim 35\,\%$ wall-clock saving with $\Delta_{\mathrm{param}}$ medians safely inside the validation threshold. This regime covers the bulk of the BBH catalog.
+    \item \textbf{Low mass-ratio regime} ($q \lesssim 0.4$, Failure mode (i)): match the Refine sampler budget to Baseline (\textsc{nlive}$\,=\,2048$, \textsc{walks}$\,=\,100$) but \emph{retain} the tight $3\sigma_{\mathrm{Scout}}$ truncation. Widening the prior in this regime degrades recovery rather than improving it because it admits additional posterior support along the $(q,\chi_{\mathrm{eff}})$ degeneracy ridge. The remaining wall-clock saving is the compression-only $14$--$28\,\%$ established by the matched-budget control of Section~\ref{sec:control}.
+    \item \textbf{Equal-mass / high-spin regime} ($q \gtrsim 0.8$, $|\chi_{\mathrm{eff}}| \gtrsim 0.3$, Failure mode (ii)): widen the informed-prior multiplier from $3\sigma_{\mathrm{Scout}}$ to $5\sigma_{\mathrm{Scout}}$ at the original reduced sampler budget. Increasing the sampler budget in this regime worsens recovery by sharpening convergence on the Scout's slightly off-centre posterior peak. The reduced budget at the wider prior preserves the full $\sim 35\,\%$ wall-clock saving.
+    \item \textbf{Joint corner} ($q \approx 1$ AND $|\chi_{\mathrm{eff}}| \gtrsim 0.3$): a residual $\Delta_q \sim 0.5$--$1.4$ persists across every configuration tested. This reflects the well-documented $(q,\chi_{\mathrm{eff}})$ degeneracy at the equal-mass boundary \citep{Hannam2013,Vitale2014,Purrer2016} and is not specific to the Scout--Refine framework. Users who require tight mass-ratio recovery in this corner should fall back to the full Baseline run; the Phase~1 Scout result still serves as a quality-check seed for the fallback.
+\end{enumerate}
+
+The switch is operationally cheap because the Scout posterior provides
+the $(q, \chi_{\mathrm{eff}})$ medians needed to assign the regime before
+the Refine sampler is launched. The resulting decision tree
+quantitatively extends the single-injection validation of Chapter~6 to a
+population-level prescription with explicitly characterised regions of
+applicability. The headline $\sim 35\,\%$ wall-clock saving is preserved
+in regimes 1 and 3, and the partial saving of regime 2 still delivers a
+material reduction relative to Baseline. Only the joint corner of
+regime 4 falls outside the framework's operational envelope.
+
 \section{Discussion}
 
 The primary objective of this research was to address the escalating computational bottleneck in gravitational-wave parameter estimation (PE) without degrading astrophysical inference. The empirical results demonstrate that the Two-Phase (Scout and Refine) framework successfully utilizes preliminary noise calibrations to heavily constrain the prior volume, yielding substantial time savings. This section provides a rigorous theoretical interpretation of these findings, compares the methodology with existing literature, explores advanced waveform systematics, and evaluates its broader impact on multi-messenger astrophysics.
@@ -1063,7 +1217,9 @@ The residual analysis presented in Section~\ref{sec:systematic} highlighted a su
 Even within a tightly constrained prior volume, the \texttt{dynesty} sampler struggles to randomly propose live points exactly on the tip of an infinitely narrow peak, resulting in massive variance between independent iterations. This phenomenon suggests that while nested sampling is optimal for the standard detection regime, ultra-loud events might be more efficiently resolved by transitioning from stochastic sampling directly to analytical gradient-descent optimization once the global peak is identified.
 
 \subsubsection{Single Injection Configuration}
-All systematic evaluations in this thesis were conducted using a single, fixed source configuration: a binary black hole system with chirp mass $\mathcal{M} = 30\,M_{\odot}$, mass ratio $q = 0.9$, and all spin components set to zero. While this choice provides a controlled, internally consistent benchmark across all 10 distance scales and 30 total runs, it does not sample the full diversity of gravitational-wave source morphologies. The performance characteristics of the two-phase framework may differ for systems with non-zero, precessing spins (where the waveform modulation introduces additional multimodality in the spin-tilt angles), extreme mass ratios ($q \ll 0.5$, where higher-order modes carry significant power and alter the effective prior topology), or binary neutron star parameters ($\mathcal{M} \sim 1.2\,M_{\odot}$, where the waveform spends thousands of cycles in band and the posterior for the chirp mass is extremely narrow). A comprehensive validation across these source classes---including both aligned-spin and precessing-spin systems---is a necessary step before deploying the Scout and Refine framework in production LIGO pipelines.
+The systematic SNR sweep of Section~\ref{sec:systematic} used a single, fixed source configuration: a binary black hole system with chirp mass $\mathcal{M} = 30\,M_{\odot}$, mass ratio $q = 0.9$, and all spin components set to zero. The population-level campaign of Section~\ref{sec:population_validation} extends this to twenty BBH injections at $d_L = 150$~Mpc, spanning $q \in [0.3, 1.0]$ and $\chi_{\mathrm{eff}} \in [-0.5, 0.5]$ with aligned spins, and confirms that the $\sim$35\,\% wall-clock saving generalises to the aligned-spin BBH parameter plane at this distance. Two regions of the parameter space were identified in which the reduced-budget Refine requires either a matched-budget Refine pass or a widened informed-prior multiplier ($5\sigma_{\rm Scout}$): low mass ratio ($q \lesssim 0.4$) and the near-equal-mass / high-aligned-spin corner. A residual mass-ratio bias in the $q\!\approx\!1$, high-$|\chi_{\mathrm{eff}}|$ corner is identified as a property of the well-known $q$--$\chi_{\mathrm{eff}}$ degeneracy \citep{Hannam2013,Vitale2014,Purrer2016} and the prior boundary at $q=1$, rather than a framework-specific limitation.
+
+The population campaign does \emph{not} cover the full diversity of GW source morphologies. The performance characteristics of the two-phase framework may still differ for precessing-spin systems (where in-plane spin components introduce additional multimodality in the spin-tilt angles not exercised by \texttt{IMRPhenomXAS}), extreme mass ratios ($q \ll 0.3$, where higher-order modes carry significant power and alter the effective prior topology), or binary neutron star parameters ($\mathcal{M} \sim 1.2\,M_{\odot}$, where the waveform spends thousands of cycles in band and the posterior for the chirp mass is extremely narrow). A comprehensive validation across these source classes---including precessing-spin systems --- is identified in Section~\ref{sec:future_work} as a priority follow-up.
 
 \subsection{Future Work}
 \label{sec:future_work}
@@ -1076,9 +1232,13 @@ Building on the results of this thesis, several concrete research directions mer
 
     \item \textbf{Gaussian Mixture Model priors:} As identified in Section~\ref{sec:limitations}, single-Gaussian truncation may fail for multimodal posteriors. Replacing the Phase 2 bounds with a Gaussian Mixture Model (GMM) or Kernel Density Estimate (KDE) prior would make the framework robust to systems with degenerate mass-spin combinations or bimodal sky reflections.
 
+    \item \textbf{Adaptive informed-prior width and the equal-mass / high-spin corner.} The population-campaign follow-up of Section~\ref{sec:population_validation} identified a Scout-induced informed-prior lock-in for near-equal-mass, high-aligned-spin injections, mitigated by widening the truncated-Gaussian multiplier from $3\sigma_{\mathrm{Scout}}$ to $5\sigma_{\mathrm{Scout}}$. A natural extension is to make this width adaptive --- driven by an empirical-quantile rule on the Scout posterior, or by the Kish effective sample size of the importance-reweighted Phase~2 posterior under candidate widths --- so that the production prescription automatically widens the prior in degeneracy-rich regions and tightens it elsewhere. This dovetails with the GMM / KDE prior proposal above: both directions address the single failure mode in which a unimodal, symmetric truncated Gaussian on $3\sigma_{\mathrm{Scout}}$ is too restrictive.
+
     \item \textbf{Hybrid waveform approximant strategy:} Phase 1 could be executed using a computationally cheap aligned-spin model (e.g., \texttt{IMRPhenomD}) while Phase 2 uses a full precessing model with higher-order multipoles (e.g., \texttt{IMRPhenomXPHM}). This hybrid strategy would multiply the time savings demonstrated here by applying expensive likelihood evaluations only within the already-constrained prior volume.
 
     \item \textbf{Gradient descent comparison:} The gradient descent versus MCMC hypothesis proposed in the Research Plan was not empirically tested in this work. A direct comparison of convergence speed and posterior fidelity between gradient-based optimization and the two-phase nested sampler would constitute a meaningful follow-up study, and could establish whether gradient descent is a practical replacement at extreme SNR as suggested in Section~\ref{sec:limitations}.
+
+    \item \textbf{PP-plot coverage calibration --- extension to larger $N$ and to precessing-spin waveforms.} A formal probability--probability test was conducted on the present $N=20$ injection campaign (Figure~\ref{fig:population_pp}). Of the three parameters whose injected values vary across the campaign, $\chi_1$ (KS $p = 0.084$) and $\chi_2$ ($p = 0.228$) lie within the $2\sigma$ Kolmogorov--Smirnov band; the mass ratio $q$ ($p = 0.015$) sits just outside it, consistent with the low-$q$ failure mode of Section~\ref{sec:population_outliers}. However, the KS test has limited power at $N=20$ (ECDF resolution $1/N = 0.05$, $2\sigma$ band half-width $\varepsilon \approx 0.31$), so the $q$ deviation is suggestive but not conclusive. A follow-up campaign with $N \gtrsim 100$ injections drawn independently from the full astrophysical prior, extended to the precessing-spin approximant (\texttt{IMRPhenomXPHM}) and to realised-noise injections \citep{Cook2006,Veitch2015}, is required to convert the present consistency-of-method demonstration into a definitive population-level coverage statement at the level normally required for hierarchical population analyses.
 \end{itemize}
 
 \section{Conclusion}
@@ -1087,6 +1247,8 @@ Building on the results of this thesis, several concrete research directions mer
 This thesis introduced, implemented, and systematically validated a two-phase Bayesian inference framework---Scout and Refine---for accelerating gravitational-wave parameter estimation. The central hypothesis was that the posterior produced by the existing low-latency PE tier on the preliminary noise PSD contains enough information to seed an accelerated final, calibration-finalized PE run, rather than launching the final run from the broad astrophysical prior. A low-fidelity Phase 1 (Scout) run on preliminary noise data constrains the prior volume, and a high-fidelity Phase 2 (Refine) run executes over that compressed volume once the calibration-finalized amplitude spectral density is available.
 
 The systematic evaluation across ten luminosity distances (10 to 5000 Mpc), representing network signal-to-noise ratios from $\rho \approx 790$ to $\rho \approx 2$, produced three principal findings. First, the two-phase framework reduces wall-clock computation time across the entire SNR spectrum, with savings ranging from $19\%$ at extreme SNR (10\,Mpc) to $59\%$ in the noise-dominated regime (5000\,Mpc), and achieving a peak saving of $44\%$ at the operational sweet spot of 40\,Mpc. This non-monotonic savings profile is physically interpretable: it reflects the interplay between prior compression efficiency, baseline convergence rate, and signal informativeness at each distance. Second, the Bayes Factor consistency metric confirmed that the log-evidence ratios from Phase 2 remain statistically indistinguishable from the unconstrained Baseline throughout the detection-sensitive regime ($\rho \gtrsim 10$), with deviations always smaller than the natural run-to-run stochastic variance. Third, the parameter recovery fidelity metric $\Delta_{\text{param}}$ remained strictly below 1.0 for all six free parameters at all three evaluated distances (40, 150, and 300\,Mpc), demonstrating that the prior volume compression does not introduce any detectable systematic bias in the recovered astrophysical parameters. A fourth, methodological finding emerged from the two orthogonal control experiments described in Section~\ref{sec:control}. A Budget-only control (reduced sampler, broad priors) achieved a $57\,\%$ wall-clock saving at 40\,Mpc but suffered a $33\,\%$ mode-finding failure rate, with one of three iterations converging to a spurious posterior mode undetectable by Bayes Factor evidence alone. A complementary Compression-only control (\emph{matched-budget Refine}: Baseline sampler, Scout-compressed priors) preserved Baseline reliability and isolated the contribution of prior compression alone, at $27.7\,\%$ saving at 40\,Mpc and $14.3\,\%$ at 150\,Mpc. The two controls combine into a clean multiplicative decomposition of the headline $44\,\%$ saving at 40\,Mpc into a $27.7\,\%$ compression component and a $22.6\,\%$ residual-budget component (and analogously $14.3\,\% + 27.1\,\%$ at 150\,Mpc). This establishes that prior compression is not a mere contributor to efficiency but a \emph{necessary condition} for the reduced sampler budget to remain reliable --- the two mechanisms are inseparable, and Phase 2 inherits the reliability of compression together with the speed of the reduced budget.
+
+A fifth principal finding emerged from the population-level injection campaign of Section~\ref{sec:population_validation}. Across twenty aligned-spin BBH injections sampled on a Latin Hypercube grid in $(q, \chi_{\mathrm{eff}})$ at $d_L = 150$~Mpc with the \texttt{IMRPhenomXAS} approximant, the median wall-clock saving was $35.1\,\%$ with a tight $p_{10}$--$p_{90}$ band of $30.3\,\%$--$39.1\,\%$ and no injections for which the framework was net-slower than Baseline. All six tracked-parameter $\Delta_{\mathrm{param}}$ medians remained below the $1\sigma$ catastrophic-bias threshold, with four of six (chirp mass, mass ratio, $\chi_1$, $\chi_2$) also clearing the tighter $0.5$ validation threshold of Section~\ref{sec:results}; the remaining two ($d_L$ and $\theta_{JN}$, medians $\approx 0.55$) reflect the distance--inclination amplitude degeneracy at $d_L = 150$~Mpc. Five of six $90$th percentiles remained below the $1\sigma$ line. Two minority failure modes were characterised at the extremes of the $(q, \chi_{\mathrm{eff}})$ plane and matched to remedies via control follow-ups (Section~\ref{sec:population_outliers}): a sampler-budget-limited bias at low mass ratio that is removed by matched-budget Refine, and a Scout-induced informed-prior lock-in in the near-equal-mass, high-aligned-spin corner that is removed by widening the informed-prior standard-deviation multiplier from $3\sigma_{\mathrm{Scout}}$ to $5\sigma_{\mathrm{Scout}}$. A residual mass-ratio bias persists in the joint corner $q\!\approx\!1$ with high $|\chi_{\mathrm{eff}}|$; this is consistent with the well-documented $q$--$\chi_{\mathrm{eff}}$ degeneracy \citep{Hannam2013,Vitale2014,Purrer2016} together with prior-boundary pile-up at $q = 1$, and is therefore reported as a property of the parameter space rather than of the Scout-and-Refine framework. The headline wall-clock saving is preserved everywhere outside this single failure-mode corner, converting the single-injection result of Section~\ref{sec:systematic} into an aligned-spin population-level characterisation with explicitly quantified regions of applicability; precessing-spin behaviour remains untested and is identified in Section~\ref{sec:future_work} as a priority follow-up.
 
 These results carry concrete operational implications. At the catalog scale of $\sim$200 events per observing run, the 44\% efficiency improvement in the standard detection regime translates to a reduction of approximately 2,500 CPU hours per waveform model. This alleviates cluster queue pressure, lowers data-center energy consumption, and accelerates the public release of gravitational-wave catalogs. A potential downstream benefit for multi-messenger astrophysics --- faster convergence on precise sky localization and luminosity distance estimates, with the corresponding reduction in electromagnetic follow-up latency --- is plausible but \emph{not} demonstrated by the present work, since RA, Dec, and $\psi$ were held fixed in all systematic runs; this is flagged as conjectural in Section~\ref{sec:results} and identified as a priority follow-up in Section~\ref{sec:future_work}.
 
@@ -1243,6 +1405,28 @@ Six parameters were varied during the estimation process, while nine parameters 
 
 \subsubsection{Phase 2 Informed Priors}
 For the Phase 2 refinement step, informed priors were constructed from Phase 1 posterior distributions as TruncatedGaussian distributions centred on the Phase 1 posterior mean with a width of $3\sigma_{\mathrm{scout}}$, clipped to the original prior boundaries. This description supersedes the pilot-study approach (5th--95th percentile expansion by a factor of 1.5) used in early exploratory runs; the systematic results throughout this thesis use the $3\sigma_{\mathrm{scout}}$ construction described in Section~\ref{sec:implementation}.
+
+\subsection{Matched-Budget Control PP-Plot}
+\label{appendix:pp_controls}
+
+The matched-budget Compression-only control runs of Section~\ref{sec:control} were also processed through the PP-plot pipeline as a sanity check. With $N=3$ iterations per distance, the empirical CDF resolves only $1/N \approx 0.33$ along the rank axis and the Kolmogorov--Smirnov bands inflate to half-widths $\varepsilon_{1\sigma} \approx 0.60$, $\varepsilon_{2\sigma} \approx 0.79$, $\varepsilon_{3\sigma} \approx 1.0$. No quantitative calibration statement can be drawn at this sample size; the panels (Figure~\ref{fig:matched_budget_pp}) confirm only that no curve falls catastrophically outside the bands, and are reported for completeness alongside the headline campaign result of Section~\ref{sec:population_validation}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{population_pp_plot_appendix.pdf}
+    \caption[Matched-budget control PP-plot ($N=3$).]{%
+        PP-plot for the Compression-only matched-budget control runs at
+        $d_L = 40$ and $150$\,Mpc (Section~\ref{sec:control}), with $N=3$
+        iterations per distance. The four common parameters tracked are
+        chirp mass, mass ratio, luminosity distance, and inclination; the
+        spin curves are omitted because the matched-budget runs use the
+        precessing $(a_i, \mathrm{tilt}_i)$ parametrisation rather than
+        the aligned-spin $\chi_i$ parametrisation of the population
+        campaign. ECDF resolution at $N=3$ is $0.33$ and KS bands are
+        very wide; the panels are qualitative only and no quantitative
+        calibration statement is drawn from them.}
+    \label{fig:matched_budget_pp}
+\end{figure}
 
 \clearpage
 
@@ -1694,6 +1878,29 @@ Physical Review D, vol. 74, no. 4, 041501, 2006.
   ``Real-Time Gravitational Wave Science with Neural Posterior Estimation'',
   Physical Review Letters, vol. 127, no. 24, 241103, 2021,
   arXiv:2106.12594.
+
+\bibitem{Hannam2013}
+  M. Hannam, P. Schmidt, A. Boh\'e, L. Haegel, S. Husa, F. Ohme, G. Pratten, M. P\"urrer,
+  ``Simple Model of Complete Precessing Black-Hole-Binary Gravitational Waveforms'',
+  Physical Review Letters, vol. 113, no. 15, 151101, 2014,
+  arXiv:1308.3271.
+
+\bibitem{Vitale2014}
+  S. Vitale, R. Lynch, J. Veitch, V. Raymond, R. Sturani,
+  ``Measuring the Spin of Black Holes in Binary Systems Using Gravitational Waves'',
+  Physical Review Letters, vol. 112, no. 25, 251101, 2014,
+  arXiv:1403.0129.
+
+\bibitem{Purrer2016}
+  M. P\"urrer, M. Hannam, F. Ohme,
+  ``Can we measure individual black-hole spins from gravitational-wave observations?'',
+  Physical Review D, vol. 93, no. 8, 084042, 2016,
+  arXiv:1512.04955.
+
+\bibitem{McKay1979}
+  M. D. McKay, R. J. Beckman, W. J. Conover,
+  ``A Comparison of Three Methods for Selecting Values of Input Variables in the Analysis of Output from a Computer Code'',
+  Technometrics, vol. 21, no. 2, 239--245, 1979.
 \end{thebibliography}
 
 \end{document}

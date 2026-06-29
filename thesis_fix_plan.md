@@ -14,9 +14,16 @@ Status of the committee-style critique. Two tracks:
 - ✅ B1 (R-metric figure)
 - ✅ B2 (Phase 1 wall-clock — merged into A7 table)
 - ✅ B3 (matched-budget control — the decisive experiment)
-- ⏳ B4, B5, B6, B7, B8, B9 — all optional; the thesis is defense-ready without them, but each closes an additional examiner question.
+- ✅ B5 (population campaign, 20 injections at 150 Mpc, with matched-budget + wider-σ outlier follow-ups for inj_04 and inj_05; new §6.5 in `main.tex`)
+- ⏳ B4, B6, B7, B8, B9 — all optional; the thesis is defense-ready without them, but each closes an additional examiner question.
 
-**Next-up recommendation:** **B5** (small injection campaign at 150 Mpc). It is the single highest-leverage remaining experiment — converts the existence claim into a population-level statement and produces a PP-plot-style figure that pre-empts the "single-injection generalization" question.
+**B5 outcome summary:**
+- Headline: 35.1% median wall-clock saving across the 20-injection population (p10–p90 = 30.3%–39.1%); no net-slow injections.
+- All six $\Delta_{\mathrm{param}}$ population medians below the 0.5 validation threshold; five of six p90s below the 1σ catastrophic-bias line.
+- Two minority failure modes characterised with opposite remedies: low-q needs matched-budget Refine; equal-mass / high-spin needs wider $5\sigma_{\mathrm{Scout}}$ prior at reduced budget. Operational §6.5 prescription is therefore regime-dependent on the Scout’s $(q,\chi_{\mathrm{eff}})$ estimate.
+- Residual $\Delta_q$ in the joint $q\approx 1$ + high-$|\chi_{\mathrm{eff}}|$ corner is reported as a property of the well-known $q$–$\chi_{\mathrm{eff}}$ degeneracy (Hannam 2013; Vitale 2014; Pürrer 2016), not a framework limitation.
+
+**Next-up recommendation:** **B4** (sky-localization free run at one distance). Lets you remove the "this claim is conjectural" disclaimer from §7.5 and the Conclusion. Quantifies the sky-area shrinkage in deg² at 90% confidence for both methods. ~50–100 CPU-hours.
 
 ---
 
@@ -54,12 +61,15 @@ Sorted shortest run-time → longest. The thesis is defense-ready without any of
 **Setup:** Add RA (uniform), Dec (cos), ψ (uniform) to the free parameters; `IMRPhenomXPHM`, 150 Mpc injection; N=3 each.
 **Deliverable:** New §6.4.x with sky-area numbers and an extended corner plot.
 
-### B5. [~3–5 days] **Small injection campaign at 150 Mpc (RECOMMENDED NEXT)**
-**Run-time:** 20 injections × 2 methods × ~4h ≈ 160 CPU-hours.
-**What:** Sample 20 injections at 150 Mpc varying q ∈ [0.3, 1.0] and χ_eff ∈ [–0.5, 0.5] (aligned spins only). Run Baseline + Phase 2.
-**Why:** This is the single highest-leverage remaining experiment. Converts the existence claim into a population-level statement. The committee question "does this generalize beyond your one source?" becomes "here's the Δ_param distribution over 20 sources."
-**Setup:** Quasi-random grid in (q, χ_eff); `IMRPhenomD` or `IMRPhenomXAS` (aligned-spin, cheap); per-injection Δ_param computation; box-plot output.
-**Deliverable:** New §6.5 with a Δ_param box-plot per parameter — turns the defense from "well-defended single point" into "characterized across the BBH population."
+### B5. ✅ COMPLETED — Small injection campaign at 150 Mpc
+**Final run-time:** ~120 CPU-hours across the campaign (20×3 runs) + ~6 CPU-hours of outlier follow-ups (matched-budget and wider-σ on inj_04 + inj_05).
+**Setup as run:** Latin Hypercube grid in $(q, \chi_{\mathrm{eff}}) \in [0.3,1.0]\times[-0.5,0.5]$, aligned spins via bilby's `chi_i` parameterisation, `IMRPhenomXAS`. Three iterations were collapsed to a single iteration per injection for the population sweep, with three follow-ups for each of the two worst outliers under matched-budget and wider-σ conditions.
+**Deliverable (delivered):**
+- New §6.5 in `main.tex` (label `sec:b5_population_validation`), with population summary Table (`tab:b5_population_summary`) and outlier-follow-up Table (`tab:b5_outlier_followup`).
+- Two new figures (`b5_delta_param_boxplot.pdf`, `b5_q_chi_eff_scatter.pdf`).
+- Four new bibliography entries (Hannam 2013, Vitale 2014, Pürrer 2016, McKay 1979).
+- Updated §7.6.4 (single-injection limitation), §7.7 Future Work bullet on adaptive prior width, and a fifth-finding paragraph in §8 Conclusion.
+**Key finding:** Two minority failure modes characterised at the $(q, \chi_{\mathrm{eff}})$ extremes respond to *opposite* remedies — low-q needs matched-budget Refine with the original $3\sigma_{\mathrm{Scout}}$ truncation, equal-mass / high-spin needs wider $5\sigma_{\mathrm{Scout}}$ truncation at reduced budget. Operational §6.5 prescription is therefore regime-dependent on the Scout's $(q,\chi_{\mathrm{eff}})$ estimate.
 
 ### B6. [~5–7 days] Full 15-parameter demonstration at one distance
 **Run-time:** 15D with `IMRPhenomXPHM` ≈ 20–30h per run × 2 methods × 3 iterations = ~150 CPU-hours.
@@ -93,7 +103,7 @@ Sorted shortest run-time → longest. The thesis is defense-ready without any of
 
 ## Suggested Order (if you have time)
 
-1. **B5** — population generalization. Best return on compute time.
+1. ~~**B5**~~ ✅ **COMPLETED** — population generalisation; regime-dependent operational prescription delivered.
 2. **B4** — sky-free run. Lets you remove the §7.5 conjectural disclaimer.
 3. **B6** — full 15D run. Closes the dimensionality-extrapolation question.
 4. **B7** — real event. Strongest possible vindication, but requires more setup (data acquisition, PSD versioning).

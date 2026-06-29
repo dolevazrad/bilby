@@ -61,7 +61,7 @@ from recompute_b5_deltas_weighted import (
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-TARGET_INDICES = [5]      # B5 injection indices to retest
+TARGET_INDICES = [4]      # B5 injection indices to retest (set [4,5] to do both)
 SIGMA_MULTIPLIER = 5.0    # informed-prior width: safe_sigma = sigma * THIS
 RUN_BOTH_BUDGETS = True   # if False, only the production (reduced-budget) leg
 

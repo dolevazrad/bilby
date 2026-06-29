@@ -201,11 +201,11 @@ def main() -> None:
     write_csv(rows, OUT_DIR / "b1_metric_table.csv")
     make_figure(
         rows,
-        OUT_DIR / "figure9_noise_floor.png",
-        OUT_DIR / "figure9_noise_floor.pdf",
+        OUT_DIR / "B1_BF_vs_Distance_With_Relative_Error.png",
+        OUT_DIR / "B1_BF_vs_Distance_With_Relative_Error.pdf",
     )
-    print(f"\nWrote: {OUT_DIR / 'figure9_noise_floor.png'}")
-    print(f"Wrote: {OUT_DIR / 'figure9_noise_floor.pdf'}")
+    print(f"\nWrote: {OUT_DIR / 'B1_BF_vs_Distance_With_Relative_Error.png'}")
+    print(f"Wrote: {OUT_DIR / 'B1_BF_vs_Distance_With_Relative_Error.pdf'}")
     print(f"Wrote: {OUT_DIR / 'b1_metric_table.csv'}")
 
 
