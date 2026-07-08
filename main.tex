@@ -107,6 +107,10 @@ Department of Physics, Bar-Ilan University}
 
 \clearpage
 
+\listoffigures
+
+\clearpage
+
 
 
 \section{Introduction}
@@ -137,7 +141,7 @@ The central result of this work is a systematic validation of this framework acr
     \includegraphics[width=\linewidth]{visualise_results_final_corner.png}
     \label{fig:my_gw_recovery}
 \end{subfigure}
-\caption{Comparison of PE for a binary black hole gravitational-wave signal. Left: Results obtained using Bilby as reported in literature. Right: Results obtained by the author, replicating the analysis. On the left: Injecting and recovering a binary black hole gravitational-wave signal with Bilby. The result of PE, The posterior distributions are shown in blue and the injected values in orange.
+\caption[BBH parameter-estimation reproduction with Bilby.]{Comparison of PE for a binary black hole gravitational-wave signal. Left: Results obtained using Bilby as reported in literature. Right: Results obtained by the author, replicating the analysis. On the left: Injecting and recovering a binary black hole gravitational-wave signal with Bilby. The result of PE, The posterior distributions are shown in blue and the injected values in orange.
     This figure is taken from Bilby: A user-friendly Bayesian inference library for gravitational-wave astronomy \cite{Bilby: A user-friendly}
 On the right: This figure was created by me to duplicate the results.}
 \label{fig:gw_recovery_comparison}
@@ -156,7 +160,7 @@ In GW astronomy, accurately determining both intrinsic and extrinsic parameters 
  \begin{figure}[ht]
 \centering
 \includegraphics[width=0.5\textwidth]{signal_Waveform.png}
-\caption{On top: Estimated gravitational wave amplitude of GW150914 at the Hanford detector. Above that are the Schwarzschild horizons of both merging black holes shown as calculated numerically from the general theory of relativity.[Image: LIGO / Redesign: Daniela Leitner]\cite{Observation of Gravitational Waves from a Binary Black Hole Merger}}
+\caption[GW150914 waveform and Schwarzschild horizons.]{On top: Estimated gravitational wave amplitude of GW150914 at the Hanford detector. Above that are the Schwarzschild horizons of both merging black holes shown as calculated numerically from the general theory of relativity.[Image: LIGO / Redesign: Daniela Leitner]\cite{Observation of Gravitational Waves from a Binary Black Hole Merger}}
 \label{fig:signal_waveform}
     \end{figure}
 \newpage
@@ -344,7 +348,7 @@ Alternative sampling methods are crucial for managing complex distributions and 
     \begin{figure}[ht]
     \centering
     \includegraphics[width=0.99\textwidth]{ParaEstimExample.png}
-    \caption{The detector strain measurement of GW150914 (B.abbot et al., 2016c) \cite{B.abbot et al2016c} observed by the LIGO Hanford(H1,Top) and Livingston(L1, bottom) detectors in gray. Times are realative to 14/9/2015 at 09:50:45 UTC. The cyan curve is the estimated signal using IMRPhenom and EOBNR waveform template, the blue curve a signal reconstruction based on BayseWave.\cite{B.abbot et al2016d}}
+    \caption[GW150914 detector strain at LIGO Hanford and Livingston.]{The detector strain measurement of GW150914 (B.abbot et al., 2016c) \cite{B.abbot et al2016c} observed by the LIGO Hanford(H1,Top) and Livingston(L1, bottom) detectors in gray. Times are realative to 14/9/2015 at 09:50:45 UTC. The cyan curve is the estimated signal using IMRPhenom and EOBNR waveform template, the blue curve a signal reconstruction based on BayseWave.\cite{B.abbot et al2016d}}
     \label{fig:gw_recovery}
     \end{figure}
 
@@ -373,7 +377,7 @@ For a typical observing run with $\sim$200 events, this could reduce the CPU cos
     \begin{figure}[ht]
     \centering
     \includegraphics[width=0.50\textwidth]{noise_curve_importance.png}
-\caption{The plot illustrates the strain sensitivity of the Advanced LIGO detectors during the initial (O1) and the final science run (S6) of the initial LIGO detectors. The dark red and light red curves represent the O1 strain noise for H1 and L1 respectively, indicating comparable performance between the two detectors. Also depicted are the Advanced LIGO design sensitivity and a prospective future upgrade \cite{Miller2015, Abbott2016-sensitivity}, underscoring the potential for discovery in the upcoming years.}
+\caption[Advanced LIGO strain sensitivity: O1 vs.\ design.]{The plot illustrates the strain sensitivity of the Advanced LIGO detectors during the initial (O1) and the final science run (S6) of the initial LIGO detectors. The dark red and light red curves represent the O1 strain noise for H1 and L1 respectively, indicating comparable performance between the two detectors. Also depicted are the Advanced LIGO design sensitivity and a prospective future upgrade \cite{Miller2015, Abbott2016-sensitivity}, underscoring the potential for discovery in the upcoming years.}
 
     \label{fig:noise_curve_importance}
     \end{figure}
@@ -499,14 +503,14 @@ The simulation and validation phase tests the signal processing and PE algorithm
             \label{fig:H1_1000}
         \end{subfigure}
 
-        \caption{Comparison of ASD at different noise windows on the LIGO H1 detector. Smoother curves represent longer integration times, simulating finalized noise calibration.}
+        \caption[ASD at varying integration windows (H1).]{Comparison of ASD at different noise windows on the LIGO H1 detector. Smoother curves represent longer integration times, simulating finalized noise calibration.}
         \label{fig:noise_refinement_comparison}
     \end{figure}
 
     \begin{figure}[ht]
         \centering
         \includegraphics[width=0.45\textwidth]{noise_example.jpg}
-        \caption{An example of simulated signal (green) with added noise (orange) to simulate an early detection strain (blue) as opposed to the more certain strain which detected at O3 which was taken from the Bilby documentation\cite{Bilby: A user-friendly}}
+        \caption[Simulated noisy strain example (early- vs.\ late-run).]{An example of simulated signal (green) with added noise (orange) to simulate an early detection strain (blue) as opposed to the more certain strain which detected at O3 which was taken from the Bilby documentation\cite{Bilby: A user-friendly}}
         \label{fig:noise_example}
     \end{figure}
 
@@ -615,7 +619,7 @@ The preliminary results presented here highlight the impact of different noise l
     \end{subfigure}
 
 
-    \caption{Comparison of ASD at different noise windows on the LIGO H1 detector at different integration times.
+    \caption[ASD at varying integration windows (H1, preliminary results).]{Comparison of ASD at different noise windows on the LIGO H1 detector at different integration times.
     }
     \label{fig:noise_refinement_comparison}
 \end{figure}
@@ -748,7 +752,7 @@ A primary requirement for any optimization in Bayesian inference is that the res
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.95\textwidth]{B1_BF_vs_Distance_With_Relative_Error.png}
-    \caption{Bayes-factor consistency between the Baseline and Phase 2 (Refine) methods across the ten injected distances ($N=3$ iterations per condition). \textbf{Top:} mean $\ln(\mathrm{BF})$ with $1\sigma$ intra-run error bars; the two methods overlap at every distance on a symmetric-log axis. \textbf{Middle:} signed absolute residual $\Delta\ln(\mathrm{BF}) = \langle\ln\mathrm{BF}\rangle_{\rm P2} - \langle\ln\mathrm{BF}\rangle_{\rm B}$, with the grey band showing the pooled intra-run sampler dispersion $\pm\sigma_{\rm pooled} = \pm\sqrt{(\sigma_{\rm B}^2+\sigma_{\rm P2}^2)/2}$. The dotted red lines mark the Jeffreys ``strong'' evidence threshold ($|\Delta|=5$). \textbf{Bottom:} noise-floor-normalised residual $R \equiv |\Delta\ln(\mathrm{BF})|\,/\,\sigma_{\rm pooled}$. The shaded teal region ($R<1$) is the regime in which the Baseline-vs-Phase 2 difference is smaller than the sampler's own iteration-to-iteration dispersion; $R$ replaces the relative-error metric used in prior drafts, which artificially diverges as the Baseline $\ln(\mathrm{BF})$ approaches zero near the detection threshold ($d_L \approx 1300$\,Mpc).}
+    \caption[Bayes-factor consistency and $R$-metric vs.\ distance.]{Bayes-factor consistency between the Baseline and Phase 2 (Refine) methods across the ten injected distances ($N=3$ iterations per condition). \textbf{Top:} mean $\ln(\mathrm{BF})$ with $1\sigma$ intra-run error bars; the two methods overlap at every distance on a symmetric-log axis. \textbf{Middle:} signed absolute residual $\Delta\ln(\mathrm{BF}) = \langle\ln\mathrm{BF}\rangle_{\rm P2} - \langle\ln\mathrm{BF}\rangle_{\rm B}$, with the grey band showing the pooled intra-run sampler dispersion $\pm\sigma_{\rm pooled} = \pm\sqrt{(\sigma_{\rm B}^2+\sigma_{\rm P2}^2)/2}$. The dotted red lines mark the Jeffreys ``strong'' evidence threshold ($|\Delta|=5$). \textbf{Bottom:} noise-floor-normalised residual $R \equiv |\Delta\ln(\mathrm{BF})|\,/\,\sigma_{\rm pooled}$. The shaded teal region ($R<1$) is the regime in which the Baseline-vs-Phase 2 difference is smaller than the sampler's own iteration-to-iteration dispersion; $R$ replaces the relative-error metric used in prior drafts, which artificially diverges as the Baseline $\ln(\mathrm{BF})$ approaches zero near the detection threshold ($d_L \approx 1300$\,Mpc).}
     \label{fig:bf_residuals}
 \end{figure}
 
@@ -765,7 +769,7 @@ The secondary objective of this framework is a significant reduction in total co
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{Time_vs_Distance_Scientific.png}
-    \caption{Total compute time required for Baseline parameter estimation versus the Two-Phase (Scout + Refine) method across varying luminosity distances.}
+    \caption[Wall-clock time: Baseline vs.\ Two-Phase across distances.]{Total compute time required for Baseline parameter estimation versus the Two-Phase (Scout + Refine) method across varying luminosity distances.}
     \label{fig:time_savings}
 \end{figure}
 
@@ -929,7 +933,7 @@ To visually confirm the preservation of multi-dimensional parameter correlations
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.95\textwidth]{Posterior_Overlap_40Mpc.png}
-    \caption{Corner plot displaying the posterior distributions for the 40 Mpc detection ($\rho \approx 197$). The Phase 2 posteriors (red) perfectly overlap the unconstrained Baseline posteriors (blue), confirming that multi-dimensional parameter correlations are fully preserved at high SNR. Black lines indicate the injected truth values.}
+    \caption[Posterior overlap at 40 Mpc ($\rho\approx197$).]{Corner plot displaying the posterior distributions for the 40 Mpc detection ($\rho \approx 197$). The Phase 2 posteriors (red) perfectly overlap the unconstrained Baseline posteriors (blue), confirming that multi-dimensional parameter correlations are fully preserved at high SNR. Black lines indicate the injected truth values.}
     \label{fig:corner_plot}
 \end{figure}
 
@@ -938,14 +942,14 @@ The analysis was extended to two additional representative distances to demonstr
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.95\textwidth]{Posterior_Overlap_150Mpc.png}
-    \caption{Corner plot displaying the posterior distributions for the 150 Mpc detection ($\rho \approx 52$), representative of a typical LIGO detection in the O3 era. The Phase 2 posteriors (red) remain statistically consistent with the Baseline (blue), despite wider posteriors reflecting reduced SNR. Black lines indicate injected truth values.}
+    \caption[Posterior overlap at 150 Mpc ($\rho\approx52$).]{Corner plot displaying the posterior distributions for the 150 Mpc detection ($\rho \approx 52$), representative of a typical LIGO detection in the O3 era. The Phase 2 posteriors (red) remain statistically consistent with the Baseline (blue), despite wider posteriors reflecting reduced SNR. Black lines indicate injected truth values.}
     \label{fig:corner_plot_150}
 \end{figure}
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.95\textwidth]{Posterior_Overlap_300Mpc.png}
-    \caption{Corner plot displaying the posterior distributions for the 300 Mpc detection ($\rho \approx 26$), near the LIGO detection threshold. The broader posteriors and increased sampling noise reflect marginal SNR; nevertheless, all Phase 2 medians (red) remain within $1\sigma$ of the Baseline (blue), satisfying the $\Delta_{\text{param}} < 1.0$ criterion. Black lines indicate injected truth values.}
+    \caption[Posterior overlap at 300 Mpc ($\rho\approx26$).]{Corner plot displaying the posterior distributions for the 300 Mpc detection ($\rho \approx 26$), near the LIGO detection threshold. The broader posteriors and increased sampling noise reflect marginal SNR; nevertheless, all Phase 2 medians (red) remain within $1\sigma$ of the Baseline (blue), satisfying the $\Delta_{\text{param}} < 1.0$ criterion. Black lines indicate injected truth values.}
     \label{fig:corner_plot_300}
 \end{figure}
 
@@ -1108,6 +1112,7 @@ regime 4 falls outside the framework's operational envelope.
 The primary objective of this research was to address the escalating computational bottleneck in gravitational-wave parameter estimation (PE) without degrading astrophysical inference. The empirical results demonstrate that the Two-Phase (Scout and Refine) framework successfully utilizes preliminary noise calibrations to heavily constrain the prior volume, yielding substantial time savings. This section provides a rigorous theoretical interpretation of these findings, compares the methodology with existing literature, explores advanced waveform systematics, and evaluates its broader impact on multi-messenger astrophysics.
 
 \subsection{Theoretical Interpretation of Algorithmic Efficiency}
+\label{sec:theoretical_interpretation}
 The empirical time savings of $35\%-44\%$ within the standard detection regime ($40 \le d_L \le 150$ Mpc) can be formally understood through the principles of information theory and sampling dynamics. In traditional unconstrained nested sampling, the algorithm initializes by drawing points uniformly across the entire physically permissible prior volume ($V_{\text{prior}}$). The computational work required to reach the typical set of the posterior distribution scales with the Kullback-Leibler (KL) divergence between the prior and the posterior.
 
 By utilizing the Phase 1 Scout run to construct truncated Gaussian priors, the Phase 2 method algebraically minimizes this initial KL divergence. The constrained volume acts as an information-dense starting state. Consequently, the \texttt{dynesty} sampler bypasses the extensive ``burn-in'' equivalent phase---where traditional MCMC or nested samplers expend significant computational resources evaluating areas of the parameter space where the likelihood $\mathcal{L}(\theta) \to 0$.
@@ -1174,6 +1179,7 @@ A major driver of computational cost in gravitational-wave PE is the complexity 
 The two-phase framework opens a new avenue for mitigating these waveform systematics. Phase 1 (Scout) can be executed using computationally cheap, lower-order waveform models to rapidly establish the broad location of the posterior bulk (constraining distance, chirp mass, and sky location). Phase 2 (Refine) can then be executed using the expensive, high-fidelity precessing models exclusively within the tightly bounded parameter space. This hybrid-approximant strategy would multiply the computational savings demonstrated in this thesis, potentially reducing runtimes by factors of 10 or more, without sacrificing the precision of the final spin and multipole measurements.
 
 \subsection{Implications for Catalog-Scale Computing Infrastructures}
+\label{sec:catalog}
 As the global detector network approaches design sensitivity, the detection rate is projected to reach several events per week during upcoming observing runs. The computational burden inevitably shifts from single-event analysis to massive, catalog-scale inference executed on High-Performance Computing (HPC) clusters.
 
 The baseline analysis established that a standard 15-parameter production run requires 20--30 continuous compute hours per event. For a standard catalog containing approximately 200 events, a blind final PE strategy demands upwards of 6{,}000 CPU hours per waveform model. By re-using the posterior from the low-latency analysis tier (functionally the unconstrained Phase 1 Scout) as the basis for a truncated Gaussian prior, the final calibration-finalized PE — Phase 2 (Refine) — executes over a substantially smaller prior volume. At the catalog scale, this prior-compression strategy translates to a net reduction of approximately 2{,}500 CPU hours per waveform model. This reduction significantly alleviates cluster queue times, lowers the energy consumption of data centers, and accelerates the public release of official gravitational-wave catalogs.
