@@ -30,6 +30,8 @@
 
 \usepackage{multirow}
 \usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
 
 \newlength\normalFontSize\newlength\fontSizeIncrement
 \setlength\normalFontSize{12pt}
@@ -591,82 +593,6 @@ Based on typical LIGO/Virgo computing infrastructure with 1000 available cores a
 
 Future work will include benchmarking on actual computing clusters to refine these estimates and optimize the parallelization strategy for different computational architectures. We will also investigate GPU acceleration for likelihood evaluations, which could further reduce both CPU hours and wall-clock time by factors of 10-100 for suitable portions of the calculation \cite{Bilby: A user-friendly}.
 
-\section{Preliminary Results}
-
-\subsection{Noise Refinement Process}
-In this research, the process of noise refinement is applied by employing a moving average filter to the frequency domain of the noise data, following standard signal processing techniques \cite{Welch1967}. This technique adjusts the noise data to represent varying observational conditions, enabling a more stable and consistent noise curve. Such refinement is crucial for improving the detectability of gravitational wave signals and the accuracy of the parameter estimation. The refinement is controlled by the noise time factor, where an increased factor leads to a smoother, albeit less detailed, noise curve, simulating different noise levels that might be encountered during actual observations.
-
-\subsection{Analyzing the Influence of Noise on Parameter Estimation}
-The preliminary results presented here highlight the impact of different noise levels on the accuracy of PE within gravitational-wave data analysis. This section demonstrates our method's potential for rapid and efficient PE through the application of initial calibrations and subsequent iterative refinements, aligning with our goal of efficient computational resource management.
-
-\begin{figure}[htbp]
-    \centering
-    \begin{subfigure}[b]{0.45\textwidth}
-        \includegraphics[width=\textwidth]{H1_noise_ASD_0.333_hours.png}
-        \caption{ASD for 20 minute window}
-        \label{fig:H1_250}
-    \end{subfigure}
-        \begin{subfigure}[b]{0.45\textwidth}
-        \includegraphics[width=\textwidth]{H1_noise_ASD_24.167_hours.png}
-        \caption{ASD for 24 hours window}
-        \label{fig:H1_500}
-    \end{subfigure}
-        \begin{subfigure}[b]{0.45\textwidth}
-        \includegraphics[width=\textwidth]{H1_noise_ASD_168.167_hours.png}
-        \caption{ASD for 168 hours window}
-        \label{fig:H1_750}
-    \end{subfigure}
-        \begin{subfigure}[b]{0.45\textwidth}
-        \includegraphics[width=\textwidth]{H1_noise_ASD_1152.166_hours.png}
-        \caption{ASD for 1152 hours window}
-        \label{fig:H1_1000}
-    \end{subfigure}
-
-
-    \caption[ASD at varying integration windows (H1, preliminary results).]{Comparison of ASD at different noise windows on the LIGO H1 detector at different integration times.
-    }
-    \label{fig:noise_refinement_comparison}
-\end{figure}
-
-\subsection{Technical Discussion}
-The technical efficacy of our approach can be observed in the noise spectrum comparisons and PE plots. These visual representations underscore how noise calibration at different intervals significantly alters the outcome of the PE. Our methodology's strength lies in the utilization of intermediate results obtained from preliminary noise analysis to inform the final estimation process. By implementing an adaptive strategy that capitalizes on the incremental nature of noise refinement and PE, we aim to establish a more streamlined and efficient pipeline for analyzing gravitational wave data.
-
-Through this ongoing research, we will further explore the quantitative differences between PE outcomes under varying noise conditions and develop an algorithm that employs initial estimates to curtail the runtime for subsequent analyses with final noise calibration. The anticipated outcome is a substantial reduction in the time required to achieve final parameter estimates, facilitating a faster turnaround for scientific interpretation and communication of findings within the scientific community.
-
-\subsection{Analysis Duration and Scaling Considerations}
-Parameter estimation analyzes were performed on the system described in Table~\ref{tab:compute_specs}. The total computation time for the six-parameter estimate was 2.66 hours, with an average chain length of 10,517 samples per parameter. This computational cost highlights the need for our proposed methods that aim to reduce the time needed for complete PE after the final noise calibration becomes available.
-
-Table ~\ref{tab:compute_specs} shows the runtimes for simplified 6-parameter PE. Production PE includes:
- \begin{itemize}
-      \item 2 masses parameters (chirp mass and mass ratio).
-      \item 6 spin parameters (3D vectors for each object)
-      \item 4 extrinsic parameters (distance, sky location, inclination, phase).
-    \item 3 additional parameters (time, polarization, etc.)
-
-    \end{itemize}
-Total: 15 parameters
-
-The computational cost scaling from 6 to 15 parameters is approximately:
-\begin{itemize}
-\item MCMC sampling efficiency decreases with dimension
-\item More iterations needed for convergence
-\item Expected scaling factor: $\sim 7\times$ (derived below)
-\end{itemize}
-
-The scaling factor follows from the \texttt{dynesty} cost relation $N_{\rm eval} \propto n_{\rm live} \cdot n_{\rm walks} \cdot \ln(V_{\rm prior}/V_{\rm posterior})$, where the logarithmic compression factor grows approximately linearly with dimensionality \cite{Skilling2006,HigsonNS2019,Romero-Shaw2020}: $\ln \sim 4$ at $d=6$ rises to $\ln \sim 14$ at $d=15$, a ratio of $\sim 3.5\times$. An additional $\sim 2\times$ accrues from the higher per-likelihood cost of precessing waveforms (\texttt{IMRPhenomXPHM} vs.\ \texttt{IMRPhenomD}) \cite{Pratten2020}, yielding a combined factor of $\sim 7\times$ consistent with the empirical 6D-to-15D scaling reported by Romero-Shaw et al.\ \cite{Romero-Shaw2020}. Therefore, our $\sim$3 hour test runs project to 20--30 hour production runs, making the estimated 50 percent time savings even more significant at scale.
-
-
-\subsection{Future Work and Directions}
-The next stages of this research will broaden the range of parameters assessed for their impact on gravitational waveforms. Key to this expansion will be the quantitative evaluation of how initial noise conditions versus refined conditions affect the outcomes of parameter estimation. An algorithm will be developed to utilize the results obtained under initial noise conditions to reduce the computation time required for subsequent analyses with refined noise. This strategy aims to merge preliminary and refined estimates to streamline the parameter estimation process, enhancing the efficiency of our method.
-
-
-
-
-%\clearpage
-
-
-\newpage
-
 \section{Results}
 \label{sec:results}
 
@@ -689,7 +615,56 @@ The computational cost of nested sampling scales with dimensionality through two
 where the logarithmic compression factor is itself approximately linear in the dimensionality $d$, since each additional well-constrained parameter contributes an additive $\ln(\sigma_{\rm prior}/\sigma_{\rm posterior})\sim 3$--$5$ to the sum \cite{Skilling2006,HigsonNS2019,Romero-Shaw2020}. For $d_1 = 6 \to d_2 = 15$, the prior-volume compression factor therefore grows from $\sim\!50$ ($\ln \sim 4$) to $\sim\!10^6$ ($\ln \sim 14$), a ratio of $14/4 \approx 3.5$. The additional $\sim 2\times$ comes from increased per-likelihood cost when the additional parameters include precessing spins (\texttt{IMRPhenomXPHM} vs.\ \texttt{IMRPhenomD} has $\sim 2$--$3\times$ the evaluation cost, \cite{Pratten2020}). Combining the two yields $N_{\rm eval}^{(15)} / N_{\rm eval}^{(6)} \approx 3.5 \times 2 \approx 7$, consistent with the empirical scaling reported in \cite{Romero-Shaw2020} (Table~3) for transitions between fixed-spin and full-spin configurations in similar nested-sampling runs. Extending the $\sim 2.7$-hour 6D test runs to the full 15-parameter space therefore projects to $\sim 19$--$27$ hours of continuous computation per event, with the upper end of the range assumed in the catalog-scale estimate of Section~\ref{sec:catalog}. This significant computational burden establishes the baseline necessity for the two-phase estimation method, aimed at reducing the overall wall-clock time required for catalog-level PE analysis.
 
 \subsection{The Two-Phase Parameter Estimation Framework}
-To address the computational bottleneck established in the baseline tests, the two-phase estimation framework (Scout and Refine) was implemented. In Phase 1, the \texttt{dynesty} nested sampler was deployed with broad, uninformative priors to conduct an initial sweep of the parameter space and isolate the high-probability posterior region. In Phase 2, these preliminary posteriors were utilized to construct informed, truncated Gaussian priors, significantly constraining the search volume for the final refinement run. All simulations employed the \texttt{IMRPhenomXPHM} waveform model at a minimum frequency of 20\,Hz.
+To address the computational bottleneck established in the baseline tests, the two-phase estimation framework (Scout and Refine) was implemented. In Phase 1, the \texttt{dynesty} nested sampler was deployed with broad, uninformative priors to conduct an initial sweep of the parameter space and isolate the high-probability posterior region. In Phase 2, these preliminary posteriors were utilized to construct informed, truncated Gaussian priors, significantly constraining the search volume for the final refinement run. All simulations employed the \texttt{IMRPhenomXPHM} waveform model at a minimum frequency of 20\,Hz. Figure~\ref{fig:algorithm} summarises the data and noise flow of both pipelines and makes explicit the sense in which the strain data are---and are not---re-used across the two phases.
+
+\begin{figure}[htbp]
+\centering
+\footnotesize
+\begin{tikzpicture}[
+  >={Stealth[length=2mm]},
+  node distance=6mm and 7mm,
+  box/.style={draw, rounded corners, align=center, inner sep=3pt, minimum height=9mm, text width=20mm},
+  psd/.style={box, fill=orange!14, text width=18mm, minimum height=6mm},
+  samp/.style={box, fill=blue!9},
+  outp/.style={box, fill=green!10},
+  data/.style={box, fill=gray!8, text width=13mm},
+  arr/.style={->,thick},
+  note/.style={font=\scriptsize\itshape}
+]
+% ===== Baseline lane (top) =====
+\node[samp] (bsamp) {Baseline\\nested sampling\\broad priors};
+\node[psd, above=5mm of bsamp] (bpsd) {Finalized PSD $S_h^{\mathrm{final}}$};
+\node[outp, right=of bsamp] (bout) {Posterior\\$+\ \ln Z_{\mathrm B}$};
+\node[data, left=of bsamp] (bdata) {Strain data $d$};
+\draw[arr] (bdata) -- (bsamp);
+\draw[arr] (bpsd) -- (bsamp);
+\draw[arr] (bsamp) -- (bout);
+\node[note, left=0mm of bdata, text width=12mm, align=right] {\textbf{(a)}\\Baseline};
+% ===== Scout--Refine lane (bottom) =====
+\node[samp, below=20mm of bsamp] (scout) {Phase 1: Scout\\broad priors};
+\node[psd, above=5mm of scout] (ppsd) {\textbf{Preliminary} PSD $S_h^{\mathrm{prelim}}$};
+\node[data, left=of scout] (sdata) {Strain data $d$};
+\node[box, right=of scout, text width=19mm] (spost) {Scout\\posterior};
+\node[box, right=of spost, text width=22mm, fill=yellow!15] (prior) {Truncated-Gaussian prior $3\sigma_{\mathrm{scout}}$};
+\node[samp, below=12mm of prior] (refine) {Phase 2: Refine\\informed prior};
+\node[psd, left=6mm of refine] (fpsd) {Finalized PSD $S_h^{\mathrm{final}}$};
+\node[outp, right=of refine] (rout) {Final posterior\\$+\ \ln Z$ (reweighted)};
+\draw[arr] (sdata) -- (scout);
+\draw[arr] (ppsd) -- (scout);
+\draw[arr] (scout) -- (spost);
+\draw[arr] (spost) -- (prior);
+\draw[arr,dashed] (prior) -- (refine) node[midway,right,note,text width=24mm]{prior \emph{support} only\\(no likelihood reuse)};
+\draw[arr] (fpsd) -- (refine);
+\draw[arr] (refine) -- (rout);
+\node[note, left=0mm of sdata, text width=12mm, align=right] {\textbf{(b)} Scout \&\\Refine};
+\begin{scope}[on background layer]
+\node[draw=gray,dashed,rounded corners,fit=(ppsd)(scout)(spost),inner sep=3pt,label={[note,gray]below:same $d$, \emph{preliminary} noise}] {};
+\node[draw=gray,dashed,rounded corners,fit=(fpsd)(refine)(rout),inner sep=3pt] {};
+\end{scope}
+\end{tikzpicture}
+\caption[Data and noise flow: Baseline vs.\ Scout-and-Refine.]{Data/noise flow for the two pipelines. \textbf{(a)} The Baseline evaluates the likelihood of the strain $d$ against the calibration-finalized PSD $S_h^{\mathrm{final}}$ under broad priors. \textbf{(b)} Scout-and-Refine runs Phase~1 on the \emph{same} strain but against the \emph{preliminary} PSD $S_h^{\mathrm{prelim}}$; its posterior is used \emph{only} to build the truncated-Gaussian prior support for Phase~2 (dashed arrow), which then evaluates the likelihood against $S_h^{\mathrm{final}}$. Because the two phases use two different PSDs and Phase~1 contributes no likelihood information to the Phase~2 integral, the data are not ``used twice'' in the inferential sense.}
+\label{fig:algorithm}
+\end{figure}
 
 \subsection{Simulation Setup and Sampler Configuration}
 \label{sec:implementation}
@@ -740,7 +715,7 @@ so that the blind-prior evidence is recovered exactly by
 This is the volume-corrected form of the standard importance-sampling identity \cite{Geyer1992, Owen2013}: the prior change is applied as a deterministic scalar multiplication on the evidence, with no per-sample re-weighting. Eq.~\eqref{eq:reweighted_Z} is unbiased whenever the clipping residual $\epsilon_{\rm clip}$ is negligible relative to the sampler dispersion $\sigma_{\rm pooled}$ (Figure~\ref{fig:bf_residuals}), which is the operating regime empirically confirmed for $R < 1$ across the standard detection band (Section~\ref{sec:systematic}). Section~\ref{sec:control} establishes that this regime holds throughout the detection sweet spot, and quantifies the failure mode when the Scout posterior does not enclose the true peak.
 
 \paragraph{On the ``using the data twice'' concern.}
-The Phase~1 likelihood evaluates the strain against the preliminary PSD $S_h^{\rm prelim}(f)$; the Phase~2 likelihood evaluates the same strain against the calibration-finalised PSD $S_h^{\rm final}(f)$. The two likelihoods are therefore distinct functions of $\theta$, and Phase~1 is used \emph{only} to define the support of $\pi_S$, not as a source of likelihood information that re-enters the Phase~2 integral. The estimator $\widehat{Z}_B$ depends on the Phase~1 outcome solely through $S$ and $\mathcal{V}_S$, both of which are deterministic functions of the (data-dependent) Scout posterior summary statistics. This is the same dependence structure as any pilot-driven prior tuning (e.g.\ the warm-up / pilot phases of \texttt{bilby\_pipe}, \cite{Smith2020}) and does not constitute a double use of the data in the inferential sense of \cite{Berger2006}.
+This point is illustrated schematically in Figure~\ref{fig:algorithm}. The Phase~1 likelihood evaluates the strain against the preliminary PSD $S_h^{\rm prelim}(f)$; the Phase~2 likelihood evaluates the same strain against the calibration-finalised PSD $S_h^{\rm final}(f)$. The two likelihoods are therefore distinct functions of $\theta$, and Phase~1 is used \emph{only} to define the support of $\pi_S$, not as a source of likelihood information that re-enters the Phase~2 integral. The estimator $\widehat{Z}_B$ depends on the Phase~1 outcome solely through $S$ and $\mathcal{V}_S$, both of which are deterministic functions of the (data-dependent) Scout posterior summary statistics. This is the same dependence structure as any pilot-driven prior tuning (e.g.\ the warm-up / pilot phases of \texttt{bilby\_pipe}, \cite{Smith2020}) and does not constitute a double use of the data in the inferential sense of \cite{Berger2006}.
 
 A note on the Refine sampler budget: the Refine run uses \texttt{nlive}~=~1024 and \texttt{walks}~=~50, compared to 2048 and 100 for the Baseline. These reduced settings were chosen \emph{because} the prior compression makes them sufficient: in \texttt{dynesty}, the number of likelihood evaluations scales as $N \propto \texttt{nlive} \times \texttt{walks} \times \ln(V_{\text{prior}}/V_{\text{posterior}})$. By compressing $V_{\text{prior}}$ via the Scout posterior, the third factor is reduced, allowing the sampler budget (first two factors) to be reduced while maintaining equivalent posterior quality. Running \texttt{nlive}~=~1024, \texttt{walks}~=~50 on the original broad priors would be expected to produce lower effective sample counts and degraded Bayes Factor consistency — as demonstrated by the Scout run itself (which uses even coarser settings and is explicitly not used as scientific output). The prior compression and sampler budget are therefore not independent variables: the former \emph{enables} the latter. A rigorous decomposition of the two contributions via a matched control run (reduced sampler budget, broad priors) is identified as a recommended follow-up in Section~\ref{sec:future_work}.
 
@@ -768,23 +743,23 @@ The middle and bottom panels of Figure \ref{fig:bf_residuals} provide two comple
 \end{itemize}
 
 \subsubsection{Computational Efficiency and Time Savings}
-The secondary objective of this framework is a significant reduction in total compute time. Figure \ref{fig:time_savings} illustrates the total computation hours required for both methods.
+The secondary objective of this framework is a significant reduction in total compute time. Figure~\ref{fig:time_savings} decomposes that cost, showing the Baseline alongside the Scout and Refine contributions separately so that the saving in the expensive final run is distinguishable from the total CPU cost of running both phases.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.85\textwidth]{Time_vs_Distance_Scientific.png}
-    \caption[Wall-clock time: Baseline vs.\ Two-Phase across distances.]{Total compute time required for Baseline parameter estimation versus the Two-Phase (Scout + Refine) method across varying luminosity distances.}
+    \includegraphics[width=\textwidth]{Time_Decomposition_Scout_Refine.png}
+    \caption[Decomposed compute cost: Baseline vs.\ Scout $+$ Refine.]{Where the compute time is saved, plotted from Table~\ref{tab:time_decomposition}. At each luminosity distance the grey bar is the Baseline (blind final run); the adjacent stacked bar splits the two-phase cost into the Refine / Phase~2 step (solid) and the Scout / Phase~1 step (hatched) stacked above it, so the height of the stacked bar is the total CPU cost and the solid portion alone is the time-to-final-result. The annotated percentages are the \emph{Refine-only} reduction against the Baseline, because the Scout step executes on the preliminary PSD during the multi-day calibration window and therefore does not contribute to the latency an astronomer experiences. The corresponding \emph{total-CPU} savings, which do include the Scout cost and are the relevant quantity for cluster budgeting, are listed in the ``Savings'' column of Table~\ref{tab:time_savings_summary}; at 40\,Mpc the two read 64\% and 44\% respectively. The figure makes explicit that the saving is concentrated where computation is most expensive, namely the final, calibration-finalised run.}
     \label{fig:time_savings}
 \end{figure}
 
-The Phase 2 framework systematically outperformed the Baseline across all parameter regimes, exhibiting a scaling efficiency profile directly related to the signal morphology:
+The Phase 2 framework systematically outperformed the Baseline across all parameter regimes, exhibiting a scaling efficiency profile directly related to the signal morphology. The percentages quoted below are \emph{total-CPU} savings, that is Scout $+$ Refine measured against the Baseline; the corresponding wall-clock-to-result reductions are larger and are the values annotated in Figure~\ref{fig:time_savings}.
 \begin{itemize}
     \item \textbf{Extreme SNR (10--20 Mpc):} Yielded a time savings of $\sim 20\%$ to $33\%$. Even while mapping narrow likelihood needles, the constrained Gaussian bounds allowed the sampler to converge faster than a blind sweep.
-    \item \textbf{Standard SNR (40--150 Mpc):} Yielded a time savings of $\sim 35\%$ to $44\%$. This represents the algorithm's operational ``sweet spot,'' seamlessly reducing an $\sim 8$-hour blind run to $\sim 4.3$ hours, which validates the initial hypothesis of a $\sim 44\%$ refinement time estimate for standard detections.
-    \item \textbf{Pure Noise Regime (2500--5000 Mpc):} Yielded aggressive time savings of up to $59\%$. In instances where no signal is present, the constrained search volume allowed the sampler to rapidly confirm a null-result and terminate, rather than wandering aimlessly through the prior volume.
+    \item \textbf{Standard SNR (40--150 Mpc):} Yielded a time savings of $\sim 35\%$ to $44\%$. This represents the algorithm's operational ``sweet spot,'' reducing an $\sim 8$-hour blind run to $\sim 4.3$ hours, which validates the initial hypothesis of a $\sim 44\%$ refinement time estimate for standard detections.
+    \item \textbf{Pure Noise Regime (2500--5000 Mpc):} Yielded time savings of up to $59\%$. In instances where no signal is present, the constrained search volume allowed the sampler to rapidly confirm a null-result and terminate, rather than exploring the full prior volume.
 \end{itemize}
 
-The non-monotonic shape of the savings profile---peaking at $\sim 44\%$ near 40\,Mpc, dipping to $\sim 20\%$ near 600\,Mpc, and recovering to $\sim 59\%$ at 5000\,Mpc---is not an artifact, but reflects the interplay between three competing effects. First, at extreme SNR (10--20\,Mpc) the likelihood peak is so narrow that even the blind Baseline sampler converges efficiently: steep likelihood gradients guide the live points rapidly toward the true solution, diminishing the relative advantage of prior compression. Second, in the standard-to-marginal regime (40--300\,Mpc), the posterior is broad enough that the Baseline squanders significant evaluations on low-likelihood regions, while the Phase 2 Gaussian bounds eliminate these wasted evaluations; this is the regime where prior compression provides the largest absolute benefit. Third, in the weak-signal transition regime (600--1300\,Mpc), the Scout posterior itself becomes broader and less informative (approaching the prior width), reducing the compression ratio and moderating the savings. Finally, in the pure-noise regime (2500--5000\,Mpc), the dominant cost driver reverses: the Baseline must exhaustively traverse the full prior volume to confirm the absence of a signal, while the Phase 2 constrained volume reaches the same conclusion many times faster. This three-stage behavior---efficiency floor at extreme SNR, peak savings in the detection sweet spot, and secondary peak in the noise regime---is a generic feature of nested-sampling-based prior compression and will likely persist across different GW source classes and detector networks.
+The non-monotonic shape of the savings profile---peaking at $\sim 44\%$ near 40\,Mpc, dipping to $\sim 20\%$ near 600\,Mpc, and recovering to $\sim 59\%$ at 5000\,Mpc---is not an artifact, but reflects the interplay between three competing effects. First, at extreme SNR (10--20\,Mpc) the likelihood peak is so narrow that even the blind Baseline sampler converges efficiently: steep likelihood gradients guide the live points rapidly toward the true solution, diminishing the relative advantage of prior compression. Second, in the standard-to-marginal regime (40--300\,Mpc), the posterior is broad enough that the Baseline spends significant evaluations on low-likelihood regions, while the Phase 2 Gaussian bounds eliminate these wasted evaluations; this is the regime where prior compression provides the largest absolute benefit. Third, in the weak-signal transition regime (600--1300\,Mpc), the Scout posterior itself becomes broader and less informative (approaching the prior width), reducing the compression ratio and moderating the savings. Finally, in the pure-noise regime (2500--5000\,Mpc), the dominant cost driver reverses: the Baseline must exhaustively traverse the full prior volume to confirm the absence of a signal, while the Phase 2 constrained volume reaches the same conclusion many times faster. This three-stage behavior---efficiency floor at extreme SNR, peak savings in the detection sweet spot, and secondary peak in the noise regime---is a generic feature of nested-sampling-based prior compression and will likely persist across different GW source classes and detector networks.
 
 Table~\ref{tab:time_savings_summary} provides a numerical summary of the wall-clock time for each evaluated distance.
 
@@ -926,18 +901,18 @@ To ensure robust validation across varying signal-to-noise ratios, this metric w
     \label{tab:parameter_fidelity_multi}
 \end{table}
 
-As detailed in Table \ref{tab:parameter_fidelity_multi}, the mass and distance parameters exhibit exceptional precision ($\Delta_{\text{param}} < 0.2$) in the high-SNR regime (40 Mpc), while orbital geometry parameters (inclination, phase, coalescence time) show deviations up to $\sim 0.5$ even at high SNR, reflecting their inherent posterior degeneracy. As the signal-to-noise ratio decreases (150 Mpc and 300 Mpc), the posterior distributions broaden further, and the natural sampling variance increases, pushing deviations towards $\sim 0.5 - 0.9$ across all parameters.
+As detailed in Table \ref{tab:parameter_fidelity_multi}, the mass and distance parameters exhibit high precision ($\Delta_{\text{param}} < 0.2$) in the high-SNR regime (40 Mpc), while orbital geometry parameters (inclination, phase, coalescence time) show deviations up to $\sim 0.5$ even at high SNR, reflecting their inherent posterior degeneracy. As the signal-to-noise ratio decreases (150 Mpc and 300 Mpc), the posterior distributions broaden further, and the natural sampling variance increases, pushing deviations towards $\sim 0.5 - 0.9$ across all parameters.
 
 Critically, all evaluated parameters across all distances remain strictly below the $1.0$ threshold. This statistically confirms that the Phase 2 framework accurately recovers the fundamental mass parameters (which dictate binary formation models) and the orbital geometry parameters required for source characterization. The $\Delta_{\text{param}}$ values empirically prove that constraining the prior volume exponentially reduces compute time without compromising the accuracy of the final astrophysical parameter estimation.
 
 Several physically interesting patterns emerge from Table~\ref{tab:parameter_fidelity_multi}. The mass ratio $q$ at 300\,Mpc nearly reaches the threshold ($\Delta_{\text{param}} = 0.977$), approaching but not crossing the statistical-equivalence boundary. This is not a failure of the framework but rather a consequence of diminishing posterior volume: at $\rho \sim 26$, the mass-ratio posterior is broad, and the sampling noise from $\sim 2000$ posterior samples drives a larger apparent deviation between runs. The luminosity distance, by contrast, stays well-bounded ($\Delta_{\text{param}} = 0.173$ at 300\,Mpc) because the distance posterior is constrained by the overall amplitude of the signal, which remains informative even at marginal SNR. The inclination angle $\theta_{JN}$ shows the opposite behaviour: it deviates most at 40\,Mpc ($\Delta_{\text{param}} = 0.528$) rather than at 300\,Mpc. This arises because the inclination is degenerate with luminosity distance through the gravitational-wave amplitude, and at high SNR the amplitude is measured very precisely, so small systematic differences between the Phase 2 Gaussian bounds and the true posterior shape are magnified in the ratio. The phase $\phi$ exhibits its largest deviation at 150\,Mpc ($\Delta_{\text{param}} = 0.702$), consistent with a nearly bimodal posterior at intermediate SNR where the signal provides some but not decisive phase information. These patterns are entirely consistent with established gravitational-wave posterior topology and confirm that the Phase 2 framework does not introduce any systematic bias that would affect astrophysical interpretation.
 
-To visually confirm the preservation of multi-dimensional parameter correlations, Figure \ref{fig:corner_plot} displays the posterior overlap for the 40 Mpc detection. The 1D marginal distributions and 2D contours of the Phase 2 method (red) perfectly envelope the unconstrained Baseline results (blue), demonstrating that the truncated prior bounds do not artifically truncate the true posterior bulk.
+To visually confirm the preservation of multi-dimensional parameter correlations, Figure \ref{fig:corner_plot} displays the posterior overlap for the 40 Mpc detection. The 1D marginal distributions and 2D contours of the Phase 2 method (red) closely envelop the unconstrained Baseline results (blue), demonstrating that the truncated prior bounds do not artificially truncate the true posterior bulk.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.95\textwidth]{Posterior_Overlap_40Mpc.png}
-    \caption[Posterior overlap at 40 Mpc ($\rho\approx197$).]{Corner plot displaying the posterior distributions for the 40 Mpc detection ($\rho \approx 197$). The Phase 2 posteriors (red) perfectly overlap the unconstrained Baseline posteriors (blue), confirming that multi-dimensional parameter correlations are fully preserved at high SNR. Black lines indicate the injected truth values.}
+    \caption[Posterior overlap at 40 Mpc ($\rho\approx197$).]{Corner plot displaying the posterior distributions for the 40 Mpc detection ($\rho \approx 197$). The Phase 2 posteriors (red) closely overlap the unconstrained Baseline posteriors (blue), confirming that multi-dimensional parameter correlations are preserved at high SNR. Black lines indicate the injected truth values.}
     \label{fig:corner_plot}
 \end{figure}
 
@@ -974,12 +949,12 @@ Each of the 20 grid-point injections was run with a single Refine iteration, in 
 The median wall-clock saving across the 20-injection population is $35.1\%$, with a $p_{10}$--$p_{90}$ range of $30.3\%$--$39.1\%$. This band is consistent with the per-distance figures reported in Section~\ref{sec:systematic} and, more importantly, contains no injections for which the framework was net-slower than Baseline. The saving therefore reflects a property of the method rather than a single favourable signal realisation: across the entire $(q,\chi_{\mathrm{eff}})$ plane the Scout--Refine pipeline returns the same posterior at approximately two-thirds of the Baseline wall-clock cost.
 
 \subsubsection{Parameter fidelity across the population}
-Figure~\ref{fig:population_boxplot} summarises the per-parameter $\Delta_{\mathrm{param}}$ distribution over all 20 injections. Every population median lies below the $1\sigma$ catastrophic-bias threshold ($\Delta_{\mathrm{param}}<1.0$) used in Section~\ref{sec:results}; four of six (chirp mass, mass ratio, $\chi_1$, $\chi_2$) also clear the tighter $0.5$ validation threshold used in Table~\ref{tab:parameter_fidelity_multi}. The remaining two ($d_L$ and $\theta_{JN}$, both medians $\approx 0.55$) sit just above the $0.5$ line, reflecting the distance--inclination amplitude degeneracy at $d_L = 150$~Mpc. The $90$th percentiles remain at or below the $1\sigma$ line in five of the six panels. Numerical statistics are summarised in Table~\ref{tab:population_summary}.
+Figure~\ref{fig:population_boxplot} summarises the per-parameter $\Delta_{\mathrm{param}}$ distribution over all 20 injections. Every population median lies below the $1\sigma$ bias threshold ($\Delta_{\mathrm{param}}<1.0$) used in Section~\ref{sec:results}; four of six (chirp mass, mass ratio, $\chi_1$, $\chi_2$) also clear the tighter $0.5$ validation threshold used in Table~\ref{tab:parameter_fidelity_multi}. The remaining two ($d_L$ and $\theta_{JN}$, both medians $\approx 0.55$) sit just above the $0.5$ line, reflecting the distance--inclination amplitude degeneracy at $d_L = 150$~Mpc. The $90$th percentiles remain at or below the $1\sigma$ line in five of the six panels. Numerical statistics are summarised in Table~\ref{tab:population_summary}.
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.85\textwidth]{b5_delta_param_boxplot.pdf}
-    \caption[Population $\Delta_{\mathrm{param}}$ box-plot.]{Per-parameter $\Delta_{\mathrm{param}}$ distribution over the 20-injection Latin-hypercube campaign at $d_L = 150$~Mpc. Boxes show the interquartile range, the red bar marks the median, and whiskers extend to the $10$th and $90$th percentiles. The dashed line at $\Delta_{\mathrm{param}} = 1$ marks the $1\sigma$ catastrophic-bias threshold; the dotted line at $0.5$ marks the tighter validation threshold of Table~\ref{tab:parameter_fidelity_multi}.}
+    \caption[Population $\Delta_{\mathrm{param}}$ box-plot.]{Per-parameter $\Delta_{\mathrm{param}}$ distribution over the 20-injection Latin-hypercube campaign at $d_L = 150$~Mpc. Boxes show the interquartile range, the red bar marks the median, and whiskers extend to the $10$th and $90$th percentiles. The dashed line at $\Delta_{\mathrm{param}} = 1$ marks the $1\sigma$ bias threshold; the dotted line at $0.5$ marks the tighter validation threshold of Table~\ref{tab:parameter_fidelity_multi}.}
     \label{fig:population_boxplot}
 \end{figure}
 
@@ -997,7 +972,7 @@ Figure~\ref{fig:population_boxplot} summarises the per-parameter $\Delta_{\mathr
         $\theta_{JN}$               & 20 & 0.557 & 0.904 & 1.002 \\
         \hline\hline
     \end{tabular}
-    \caption[Population statistics.]{Population statistics of $\Delta_{\mathrm{param}}$ across the 20-injection Latin-hypercube campaign. All six population medians lie below the $1\sigma$ catastrophic-bias threshold; four of six (chirp mass, mass ratio, $\chi_1$, $\chi_2$) also clear the tighter $0.5$ validation threshold of Table~\ref{tab:parameter_fidelity_multi}. Five of six $90$th percentiles lie below the $1\sigma$ line. Tail outliers are characterised in Section~\ref{sec:population_outliers}.}
+    \caption[Population statistics.]{Population statistics of $\Delta_{\mathrm{param}}$ across the 20-injection Latin-hypercube campaign. All six population medians lie below the $1\sigma$ bias threshold; four of six (chirp mass, mass ratio, $\chi_1$, $\chi_2$) also clear the tighter $0.5$ validation threshold of Table~\ref{tab:parameter_fidelity_multi}. Five of six $90$th percentiles lie below the $1\sigma$ line. Tail outliers are characterised in Section~\ref{sec:population_outliers}.}
     \label{tab:population_summary}
 \end{table}
 
@@ -1154,13 +1129,13 @@ It is essential to contextualize this two-phase nested sampling approach against
 
 \textbf{vs.\ Reduced Order Quadratures (ROQ):} ROQ achieves $\mathcal{O}(10^{2})$--$\mathcal{O}(10^{3})$ likelihood-evaluation speedup \cite{Canizares2015,Smith2016}; Scout-and-Refine achieves $\sim 1.8\times$ wall-clock speedup. ROQ wins on raw speed wherever a basis exists for the target waveform and prior region; Scout-and-Refine wins (i) for newly released or precessing waveform models for which no ROQ basis is available, (ii) for prior regions outside the ROQ-validated bounds, and (iii) as a complementary technique --- the two can be composed. ROQ requires massive pre-computation of basis functions for specific waveform approximants and prior boundaries; if a signal falls outside the pre-computed basis bounds, or a new waveform model is introduced, ROQ must be entirely rebuilt. The two-phase method presented in this thesis is completely waveform-agnostic and does not require pre-computation, making it adaptable to complex, newly developed waveform models.
 
-\textbf{vs.\ Normalising-Flow (ML) inference:} DINGO and similar amortised-inference networks deliver posteriors in seconds \cite{Dax2021}. The speedup of $\mathcal{O}(10^5)$ over conventional nested sampling is incomparable. The relevant differentiator is not speed but \emph{auditability and out-of-distribution behaviour}: ML posteriors carry no formal coverage guarantee, and degrade in unquantifiable ways for glitch-contaminated noise or out-of-training waveform families. The Phase~2 Scout-and-Refine method maintains the absolute statistical rigor of traditional Bayesian inference --- it explicitly evaluates the exact likelihood function, ensuring physically reliable and mathematically unbiased posteriors --- so it is the on-the-shelf fallback when the ML pipeline declines to provide a result, and the cross-validation engine when it does.
+\textbf{vs.\ Normalising-Flow (ML) inference:} DINGO and similar amortised-inference networks deliver posteriors in seconds \cite{Dax2021}. The speedup of $\mathcal{O}(10^5)$ over conventional nested sampling is incomparable. The relevant differentiator is not speed but \emph{auditability and out-of-distribution behaviour}: ML posteriors carry no formal coverage guarantee, and degrade in unquantifiable ways for glitch-contaminated noise or out-of-training waveform families. The Phase~2 Scout-and-Refine method maintains the statistical rigor of traditional Bayesian inference --- it explicitly evaluates the exact likelihood function, ensuring physically reliable and mathematically unbiased posteriors --- so it is the on-the-shelf fallback when the ML pipeline declines to provide a result, and the cross-validation engine when it does.
 
-\textbf{vs.\ Relative Binning / Heterodyne Likelihood (Zackay et al.\ 2018):} Relative binning \cite{Zackay2018} achieves $\mathcal{O}(10^{3})$ likelihood-evaluation speedup by computing the likelihood ratio between the signal and a reference waveform on a coarsely binned frequency grid, exploiting the smoothness of the ratio to avoid full integration. The methods operate on orthogonal axes (prior-volume compression vs.\ per-evaluation cost) and \emph{should be composed}: relative binning inside the Phase~2 sampler would multiply the savings demonstrated here. A practitioner asking ``why use Scout-and-Refine instead of relative binning?'' is therefore asking the wrong question --- the operationally correct configuration in catalog deployment is to use both.
+\textbf{vs.\ Relative Binning / Heterodyne Likelihood (Zackay et al.\ 2018):} Relative binning \cite{Zackay2018} achieves $\mathcal{O}(10^{3})$ likelihood-evaluation speedup by computing the likelihood ratio between the signal and a reference waveform on a coarsely binned frequency grid, exploiting the smoothness of the ratio to avoid full integration. The methods operate on orthogonal axes (prior-volume compression vs.\ per-evaluation cost) and \emph{should be composed}: relative binning inside the Phase~2 sampler would multiply the savings demonstrated here. Scout-and-Refine and relative binning are therefore not competing alternatives: the operationally correct configuration in catalog deployment is to use both, with relative binning accelerating each individual likelihood evaluation inside the prior-compressed Phase~2 sampler.
 
 \textbf{vs.\ RIFT (Pankow et al.\ 2015, Lange et al.\ 2018):} RIFT achieves end-to-end runtimes of $\sim$ tens of minutes on GPU clusters \cite{Pankow2015,Lange2018}, an $\mathcal{O}(10^2)$ speedup over CPU nested sampling. Scout-and-Refine does not compete on raw speed in that regime. Its operational niche is the catalog-scale CPU production environment, where (i) GPU hardware is not deployed for the calibration-finalised final run, (ii) the institutional requirement is unbiased nested-sampling evidence rather than grid-interpolated likelihood, and (iii) the prior-tuning step can be reused from low-latency outputs already in hand.
 
-\textbf{Compared to parallel \texttt{bilby\_pipe} (Smith et al.\ 2020):} The \texttt{bilby\_pipe} infrastructure \cite{Smith2020} enables embarrassingly parallel nested sampling by distributing independent \texttt{dynesty} chains across computing nodes, reducing wall-clock time for a single event by a factor proportional to the number of parallel jobs. This orthogonally accelerates any \bilby-based analysis including Scout-and-Refine: Phase 1 and Phase 2 runs are each fully compatible with \texttt{bilby\_pipe} parallelisation, meaning the two approaches compound rather than compete.
+\textbf{Compared to parallel \texttt{bilby\_pipe} (Smith et al.\ 2020):} The \texttt{bilby\_pipe} infrastructure \cite{Smith2020} enables embarrassingly parallel nested sampling by distributing independent \texttt{dynesty} chains across computing nodes, reducing wall-clock time for a single event by a factor proportional to the number of parallel jobs. This orthogonally accelerates any \texttt{bilby}-based analysis including Scout-and-Refine: Phase 1 and Phase 2 runs are each fully compatible with \texttt{bilby\_pipe} parallelisation, meaning the two approaches compound rather than compete.
 
 \paragraph{Relation to the \texttt{bilby\_pipe} pilot / restart workflow.}
 A separate feature of \texttt{bilby\_pipe} \cite{Smith2020} permits a short pilot \texttt{dynesty} run whose final live points seed a longer production run --- effectively a within-run warm-start. The Scout-and-Refine framework presented here differs from that workflow on four operational axes, and the distinction is sharper than a wall-clock comparison alone reveals.
@@ -1180,13 +1155,13 @@ A separate feature of \texttt{bilby\_pipe} \cite{Smith2020} permits a short pilo
 which collapses toward unity when the PSD change is large enough to shift the likelihood surface significantly relative to the posterior width. In the high-SNR regime — precisely where precise parameter estimation matters most — the likelihood is sharply peaked, and even moderate PSD differences can drive the ESS to a small fraction of the original sample count, producing importance-weighted posteriors that are statistically unreliable. Furthermore, at catalog scale, the resulting low-ESS posteriors are directly ingested by hierarchical Bayesian population analyses (mass function inference, spin distribution reconstruction, merger rate estimation), where individual-event posterior quality propagates multiplicatively into population-level systematics. The Scout-and-Refine framework sidesteps this failure mode entirely: Phase 2 produces a fresh nested-sampling posterior computed directly under the finalized PSD, with a sample count and ESS determined by the sampler's own convergence criterion, regardless of how large the PSD change is. The two approaches are therefore complementary rather than competitive: IS is an appropriate lightweight correction when calibration updates are incremental, while Scout-and-Refine is the robust solution when PSD changes are substantial or when high-ESS posteriors are required for downstream population studies.
 
 \subsection{Strategic Application to Waveform Systematics}
-A major driver of computational cost in gravitational-wave PE is the complexity of the waveform approximant. Evaluating an aligned-spin waveform (e.g., \textit{IMRPhenomD}) takes fractions of a millisecond, whereas evaluating a fully precessing waveform with higher-order multipoles (e.g., \textit{IMRPhenomXPHM}) is computationally exhaustive.
+A major driver of computational cost in gravitational-wave PE is the complexity of the waveform approximant. Evaluating an aligned-spin waveform (e.g., \textit{IMRPhenomD}) takes fractions of a millisecond, whereas evaluating a fully precessing waveform with higher-order multipoles (e.g., \textit{IMRPhenomXPHM}) is computationally expensive.
 
 The two-phase framework opens a new avenue for mitigating these waveform systematics. Phase 1 (Scout) can be executed using computationally cheap, lower-order waveform models to rapidly establish the broad location of the posterior bulk (constraining distance, chirp mass, and sky location). Phase 2 (Refine) can then be executed using the expensive, high-fidelity precessing models exclusively within the tightly bounded parameter space. This hybrid-approximant strategy would multiply the computational savings demonstrated in this thesis, potentially reducing runtimes by factors of 10 or more, without sacrificing the precision of the final spin and multipole measurements.
 
 \subsection{Implications for Catalog-Scale Computing Infrastructures}
 \label{sec:catalog}
-As the global detector network approaches design sensitivity, the detection rate is projected to reach several events per week during upcoming observing runs. The computational burden inevitably shifts from single-event analysis to massive, catalog-scale inference executed on High-Performance Computing (HPC) clusters.
+As the global detector network approaches design sensitivity, the detection rate is projected to reach several events per week during the O4 and O5 observing runs \cite{ObservingScenarios} --- of order one confident detection every few days, set against the 90 candidates accumulated across the first three observing runs combined \cite{GWTC3}. The physical stakes of this growth are not bookkeeping: the science that motivates parameter estimation in the first place is itself limited by parameter-estimation throughput. Constraints on the black-hole mass and spin distributions, on the evolution of the merger rate with redshift, and on Tests of General Relativity (TGR) --- inspiral--merger--ringdown consistency, parameterised post-Newtonian deviations, ringdown spectroscopy --- are all built by combining posteriors across events, so their statistical precision improves roughly as $1/\sqrt{N_{\mathrm{events}}}$. An analysis backlog therefore does not merely delay a data release; it caps the precision of every population-level and TGR statement the catalog is able to support. The computational burden inevitably shifts from single-event analysis to massive, catalog-scale inference executed on High-Performance Computing (HPC) clusters.
 
 The baseline analysis established that a standard 15-parameter production run requires 20--30 continuous compute hours per event. For a standard catalog containing approximately 200 events, a blind final PE strategy demands upwards of 6{,}000 CPU hours per waveform model. By re-using the posterior from the low-latency analysis tier (functionally the unconstrained Phase 1 Scout) as the basis for a truncated Gaussian prior, the final calibration-finalized PE — Phase 2 (Refine) — executes over a substantially smaller prior volume. At the catalog scale, this prior-compression strategy translates to a net reduction of approximately 2{,}500 CPU hours per waveform model. This reduction significantly alleviates cluster queue times, lowers the energy consumption of data centers, and accelerates the public release of official gravitational-wave catalogs.
 
@@ -1199,7 +1174,7 @@ If the prior-compression mechanism demonstrated here for intrinsic parameters ex
 \label{sec:limitations}
 While the framework exhibits high efficiency and excellent astrophysical fidelity, a rigorous scientific analysis requires addressing its fundamental limitations, potential failure modes, and mathematical edge cases observed during the systematic SNR evaluation.
 
-\subsubsection{Catastrophic Phase 1 Mis-characterization}
+\subsubsection{Severe Phase 1 Mis-characterization}
 \label{sec:fallback}
 The primary vulnerability of the Scout and Refine method is its absolute algorithmic dependence on the reliability of the Phase 1 posterior. The Phase 2 truncated Gaussian bounds are explicitly constructed around the Phase 1 median; if the preliminary noise curve contains severe, unmitigated non-Gaussian artefacts that temporarily mimic the signal track, the Scout nested sampler may converge on a spurious global maximum, and the Phase 2 prior volume would be permanently displaced from the true astrophysical parameters.
 
@@ -1216,7 +1191,7 @@ be the expected log-evidence for a coherent CBC signal at that SNR, where the of
 We adopt $\tau = 5$, matching the Jeffreys ``strong'' evidence threshold: a $5\,\sigma$-equivalent log-Bayes-factor deficit relative to the SNR-expected value is the signature of a Phase~1 mis-characterisation serious enough to warrant a full re-run.
 
 \paragraph{False-positive / false-negative behaviour.}
-From the Baseline runs of this thesis the scatter of $\ln Z - \ln Z_{\rm ref}(\rho_{\rm net})$ across the ten test distances has $\sigma \approx 1.5$ at fixed SNR, so a $\tau = 5$ threshold corresponds to a per-event false-positive (unnecessary fallback) rate of $P(|X| > 3.3\sigma) \approx 10^{-3}$. The false-negative behaviour --- the probability that a genuinely catastrophic Scout failure nonetheless produces a Phase~2 evidence within $\tau$ of the expected value --- is bounded above by the probability that the spurious Phase~2 posterior coincidentally peaks at the correct data-likelihood, which scales as $\exp(-\rho_{\rm net}^2/2)$ for distinct candidate solutions and is negligible at any $\rho_{\rm net} \gtrsim 8$. The threshold rule is therefore strongly conservative in the detection-confident regime; in the marginal regime ($\rho_{\rm net} \lesssim 8$) the rule should be supplemented by an independent posterior-shift check between the Scout and Refine parameter medians, since both methods may be operating near the noise floor where evidence differences are uninformative.
+From the Baseline runs of this thesis the scatter of $\ln Z - \ln Z_{\rm ref}(\rho_{\rm net})$ across the ten test distances has $\sigma \approx 1.5$ at fixed SNR, so a $\tau = 5$ threshold corresponds to a per-event false-positive (unnecessary fallback) rate of $P(|X| > 3.3\sigma) \approx 10^{-3}$. The false-negative behaviour --- the probability that a genuinely severe Scout failure nonetheless produces a Phase~2 evidence within $\tau$ of the expected value --- is bounded above by the probability that the spurious Phase~2 posterior coincidentally peaks at the correct data-likelihood, which scales as $\exp(-\rho_{\rm net}^2/2)$ for distinct candidate solutions and is negligible at any $\rho_{\rm net} \gtrsim 8$. The threshold rule is therefore strongly conservative in the detection-confident regime; in the marginal regime ($\rho_{\rm net} \lesssim 8$) the rule should be supplemented by an independent posterior-shift check between the Scout and Refine parameter medians, since both methods may be operating near the noise floor where evidence differences are uninformative.
 
 \subsubsection{High-Dimensional Multimodality and Spin Degeneracies}
 Gravitational-wave parameter spaces frequently exhibit severe multimodality and ``banana-shaped'' covariances. A prime astrophysical example is the degeneracy between the mass ratio ($q$) and the effective inspiral spin ($\chi_{\text{eff}}$). Because both parameters affect the rate of inspiral phase evolution similarly, the likelihood surface stretches into highly correlated, non-Gaussian arcs.
@@ -1260,11 +1235,11 @@ This thesis introduced, implemented, and systematically validated a two-phase Ba
 
 The systematic evaluation across ten luminosity distances (10 to 5000 Mpc), representing network signal-to-noise ratios from $\rho \approx 790$ to $\rho \approx 2$, produced three principal findings. First, the two-phase framework reduces wall-clock computation time across the entire SNR spectrum, with savings ranging from $19\%$ at extreme SNR (10\,Mpc) to $59\%$ in the noise-dominated regime (5000\,Mpc), and achieving a peak saving of $44\%$ at the operational sweet spot of 40\,Mpc. This non-monotonic savings profile is physically interpretable: it reflects the interplay between prior compression efficiency, baseline convergence rate, and signal informativeness at each distance. Second, the Bayes Factor consistency metric confirmed that the log-evidence ratios from Phase 2 remain statistically indistinguishable from the unconstrained Baseline throughout the detection-sensitive regime ($\rho \gtrsim 10$), with deviations always smaller than the natural run-to-run stochastic variance. Third, the parameter recovery fidelity metric $\Delta_{\text{param}}$ remained strictly below 1.0 for all six free parameters at all three evaluated distances (40, 150, and 300\,Mpc), demonstrating that the prior volume compression does not introduce any detectable systematic bias in the recovered astrophysical parameters. A fourth, methodological finding emerged from the two orthogonal control experiments described in Section~\ref{sec:control}. A Budget-only control (reduced sampler, broad priors) achieved a $57\,\%$ wall-clock saving at 40\,Mpc but suffered a $33\,\%$ mode-finding failure rate, with one of three iterations converging to a spurious posterior mode undetectable by Bayes Factor evidence alone. A complementary Compression-only control (\emph{matched-budget Refine}: Baseline sampler, Scout-compressed priors) preserved Baseline reliability and isolated the contribution of prior compression alone, at $27.7\,\%$ saving at 40\,Mpc and $14.3\,\%$ at 150\,Mpc. The two controls combine into a clean multiplicative decomposition of the headline $44\,\%$ saving at 40\,Mpc into a $27.7\,\%$ compression component and a $22.6\,\%$ residual-budget component (and analogously $14.3\,\% + 27.1\,\%$ at 150\,Mpc). This establishes that prior compression is not a mere contributor to efficiency but a \emph{necessary condition} for the reduced sampler budget to remain reliable --- the two mechanisms are inseparable, and Phase 2 inherits the reliability of compression together with the speed of the reduced budget.
 
-A fifth principal finding emerged from the population-level injection campaign of Section~\ref{sec:population_validation}. Across twenty aligned-spin BBH injections sampled on a Latin Hypercube grid in $(q, \chi_{\mathrm{eff}})$ at $d_L = 150$~Mpc with the \texttt{IMRPhenomXAS} approximant, the median wall-clock saving was $35.1\,\%$ with a tight $p_{10}$--$p_{90}$ band of $30.3\,\%$--$39.1\,\%$ and no injections for which the framework was net-slower than Baseline. All six tracked-parameter $\Delta_{\mathrm{param}}$ medians remained below the $1\sigma$ catastrophic-bias threshold, with four of six (chirp mass, mass ratio, $\chi_1$, $\chi_2$) also clearing the tighter $0.5$ validation threshold of Section~\ref{sec:results}; the remaining two ($d_L$ and $\theta_{JN}$, medians $\approx 0.55$) reflect the distance--inclination amplitude degeneracy at $d_L = 150$~Mpc. Five of six $90$th percentiles remained below the $1\sigma$ line. Two minority failure modes were characterised at the extremes of the $(q, \chi_{\mathrm{eff}})$ plane and matched to remedies via control follow-ups (Section~\ref{sec:population_outliers}): a sampler-budget-limited bias at low mass ratio that is removed by matched-budget Refine, and a Scout-induced informed-prior lock-in in the near-equal-mass, high-aligned-spin corner that is removed by widening the informed-prior standard-deviation multiplier from $3\sigma_{\mathrm{Scout}}$ to $5\sigma_{\mathrm{Scout}}$. A residual mass-ratio bias persists in the joint corner $q\!\approx\!1$ with high $|\chi_{\mathrm{eff}}|$; this is consistent with the well-documented $q$--$\chi_{\mathrm{eff}}$ degeneracy \citep{Hannam2013,Vitale2014,Purrer2016} together with prior-boundary pile-up at $q = 1$, and is therefore reported as a property of the parameter space rather than of the Scout-and-Refine framework. The headline wall-clock saving is preserved everywhere outside this single failure-mode corner, converting the single-injection result of Section~\ref{sec:systematic} into an aligned-spin population-level characterisation with explicitly quantified regions of applicability; precessing-spin behaviour remains untested and is identified in Section~\ref{sec:future_work} as a priority follow-up.
+A fifth principal finding emerged from the population-level injection campaign of Section~\ref{sec:population_validation}. Across twenty aligned-spin BBH injections sampled on a Latin Hypercube grid in $(q, \chi_{\mathrm{eff}})$ at $d_L = 150$~Mpc with the \texttt{IMRPhenomXAS} approximant, the median wall-clock saving was $35.1\,\%$ with a tight $p_{10}$--$p_{90}$ band of $30.3\,\%$--$39.1\,\%$ and no injections for which the framework was net-slower than Baseline. All six tracked-parameter $\Delta_{\mathrm{param}}$ medians remained below the $1\sigma$ bias threshold, with four of six (chirp mass, mass ratio, $\chi_1$, $\chi_2$) also clearing the tighter $0.5$ validation threshold of Section~\ref{sec:results}; the remaining two ($d_L$ and $\theta_{JN}$, medians $\approx 0.55$) reflect the distance--inclination amplitude degeneracy at $d_L = 150$~Mpc. Five of six $90$th percentiles remained below the $1\sigma$ line. Two minority failure modes were characterised at the extremes of the $(q, \chi_{\mathrm{eff}})$ plane and matched to remedies via control follow-ups (Section~\ref{sec:population_outliers}): a sampler-budget-limited bias at low mass ratio that is removed by matched-budget Refine, and a Scout-induced informed-prior lock-in in the near-equal-mass, high-aligned-spin corner that is removed by widening the informed-prior standard-deviation multiplier from $3\sigma_{\mathrm{Scout}}$ to $5\sigma_{\mathrm{Scout}}$. A residual mass-ratio bias persists in the joint corner $q\!\approx\!1$ with high $|\chi_{\mathrm{eff}}|$; this is consistent with the well-documented $q$--$\chi_{\mathrm{eff}}$ degeneracy \citep{Hannam2013,Vitale2014,Purrer2016} together with prior-boundary pile-up at $q = 1$, and is therefore reported as a property of the parameter space rather than of the Scout-and-Refine framework. The headline wall-clock saving is preserved everywhere outside this single failure-mode corner, converting the single-injection result of Section~\ref{sec:systematic} into an aligned-spin population-level characterisation with explicitly quantified regions of applicability; precessing-spin behaviour remains untested and is identified in Section~\ref{sec:future_work} as a priority follow-up.
 
 These results carry concrete operational implications. At the catalog scale of $\sim$200 events per observing run, the 44\% efficiency improvement in the standard detection regime translates to a reduction of approximately 2,500 CPU hours per waveform model. This alleviates cluster queue pressure, lowers data-center energy consumption, and accelerates the public release of gravitational-wave catalogs. A potential downstream benefit for multi-messenger astrophysics --- faster convergence on precise sky localization and luminosity distance estimates, with the corresponding reduction in electromagnetic follow-up latency --- is plausible but \emph{not} demonstrated by the present work, since RA, Dec, and $\psi$ were held fixed in all systematic runs; this is flagged as conjectural in Section~\ref{sec:results} and identified as a priority follow-up in Section~\ref{sec:future_work}.
 
-The primary limitations of the present work are three-fold. The framework was validated on a single, non-spinning binary black hole source configuration, leaving open questions about performance on precessing, asymmetric, or neutron-star systems. The Phase 1 Scout is inherently vulnerable to catastrophic mis-characterization if preliminary noise curves contain severe non-Gaussian artefacts; production deployments require an automated evidence-threshold fallback to an unconstrained run. Finally, the current single-Gaussian prior construction is insufficient for posteriors with severe multimodality, such as those arising from mass-spin degeneracies or sky reflections. The control experiment further showed a systematic $\sim$25\,Mpc upward bias in luminosity distance recovery at 150\,Mpc when sampling on broad priors with the reduced budget, confirming that prior compression is also essential for unbiased distance estimation at moderate SNR.
+The primary limitations of the present work are three-fold. The framework was validated on a single, non-spinning binary black hole source configuration, leaving open questions about performance on precessing, asymmetric, or neutron-star systems. The Phase 1 Scout is inherently vulnerable to severe mis-characterization if preliminary noise curves contain severe non-Gaussian artefacts; production deployments require an automated evidence-threshold fallback to an unconstrained run. Finally, the current single-Gaussian prior construction is insufficient for posteriors with severe multimodality, such as those arising from mass-spin degeneracies or sky reflections. The control experiment further showed a systematic $\sim$25\,Mpc upward bias in luminosity distance recovery at 150\,Mpc when sampling on broad priors with the reduced budget, confirming that prior compression is also essential for unbiased distance estimation at moderate SNR.
 
 The most promising extensions are the hybrid waveform approximant strategy---using a cheap aligned-spin model in Phase 1 and the full precessing \texttt{IMRPhenomXPHM} model in Phase 2 exclusively within the compressed volume---and the replacement of single-Gaussian bounds with Kernel Density Estimation or Gaussian Mixture Model priors. Together, these improvements could push the computational savings well beyond the factors demonstrated here, making the Scout and Refine framework a practical tool for real-time analysis of the event rates anticipated in LIGO's upcoming O5 and O6 observing runs.
 
@@ -1337,12 +1312,23 @@ Starting from preliminary estimates constrains the effective search volume. For 
 Traditional PE requires extensive burn-in phases (typically 25--40\% of total iterations) to reach the high-probability region \cite{Veitch2015}. Our Phase 2 starts near this region, effectively eliminating most burn-in time.
 
 \textbf{3. Empirical Evidence from Table \ref{tab:runtime_data}:}
-Comparing different noise windows:
-\begin{itemize}
-    \item Noisier data (600s window): 3.34 hours
-    \item Cleaner data (604,800s window): 1.88 hours
-    \item Ratio: 1.88/3.34 = 56\% of time needed when starting conditions improve
-\end{itemize}
+Comparing the noisiest and cleanest ASD windows of Table~\ref{tab:runtime_data} gives the ratio shown in Table~\ref{tab:empirical_ratio}.
+
+\begin{table}[ht]
+\centering
+\caption{Empirical runtime comparison between the noisiest and cleanest ASD windows of Table~\ref{tab:runtime_data}.}
+\label{tab:empirical_ratio}
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Case} & \textbf{ASD window (s)} & \textbf{Runtime (hours)} \\
+\hline
+Noisier data & 600 & 3.34 \\
+Cleaner data & 604,800 & 1.88 \\
+\hline
+\multicolumn{2}{|l|}{\textbf{Ratio} (cleaner / noisier)} & $1.88/3.34 = 56\%$ \\
+\hline
+\end{tabular}
+\end{table}
 
 This suggests that better initial conditions (which our Phase 1 provides) can reduce the computation time by approximately 44\%.
 
@@ -1371,12 +1357,22 @@ T_{\text{effective}} &= T_{\text{Phase 2}} = 2,352 \text{ hours} = 98 \text{ day
 \text{Percentage saved} &= \frac{77}{175} \times 100\% = 44\%
 \end{align}
 
-Where:
-\begin{itemize}
-    \item $N_{\text{events}}$ = 200 (typical for O4 observing run)
-    \item $t_{\text{full PE}}$ = 3 hours (from our 6-parameter tests)
-    \item $S_{\text{param}}$ = 7 (scaling factor from 6 to 15 parameters; see derivation below)
-\end{itemize}
+The quantities entering this calculation are defined in Table~\ref{tab:savings_inputs}.
+
+\begin{table}[ht]
+\centering
+\caption{Quantities entering the catalog-scale time-savings calculation.}
+\label{tab:savings_inputs}
+\begin{tabular}{|c|c|l|}
+\hline
+\textbf{Symbol} & \textbf{Value} & \textbf{Meaning} \\
+\hline
+$N_{\text{events}}$ & 200 & Events per observing run (typical for O4) \\
+$t_{\text{full PE}}$ & 3 hours & Full PE time, from the 6-parameter tests \\
+$S_{\text{param}}$ & 7 & Scaling factor from 6 to 15 parameters (derived below) \\
+\hline
+\end{tabular}
+\end{table}
 
 The scaling factor $S_{\text{param}} \approx 7$ is derived from the \texttt{dynesty} likelihood-evaluation count $N_{\rm eval} \propto n_{\rm live} \cdot n_{\rm walks} \cdot \ln(V_{\rm prior}/V_{\rm posterior})$, where each well-constrained additional parameter contributes an additive $\ln(\sigma_{\rm prior}/\sigma_{\rm posterior}) \sim 3$--$5$ to the logarithm \cite{Skilling2006,HigsonNS2019,Romero-Shaw2020}. Moving from $d=6$ to $d=15$ therefore increases the log-compression factor by $\sim 3.5\times$, and the precessing waveform (\texttt{IMRPhenomXPHM} vs.\ \texttt{IMRPhenomD}) contributes a further $\sim 2\times$ in per-likelihood cost \cite{Pratten2020}, for a combined $\sim 7\times$ consistent with the empirical scaling reported in Romero-Shaw et al.\ \cite{Romero-Shaw2020}.
 
@@ -1389,31 +1385,58 @@ Note: the Phase 1 (Scout) computation is functionally equivalent to the already-
 The parameter estimation analyses were performed on a single binary black hole (BBH) system with multiple noise realizations using different ASD window sizes. Six independent analyzes with window sizes ranging from 600 seconds to 5,184,000 seconds (see Table~\ref{tab:runtime_data}), providing insight into how temporal noise averaging affects PE performance.
 
 \subsubsection{Injected Signal Parameters}
-The synthetic gravitational wave signal was generated with the following parameters:
-\begin{itemize}
-    \item \textbf{Mass parameters:} $\mathcal{M} = 21.75\,M_\odot$ (chirp mass), $q = 1.0$ (mass ratio)
-    \item \textbf{Distance:} $d_L = 400.0$ Mpc (luminosity distance)
-    \item \textbf{Orientation:} $\theta_{JN} = 0.4$ rad (inclination), $\phi = 0.0$ rad (phase)
-    \item \textbf{Sky location:} RA = $1.375$ rad, Dec = $-1.2108$ rad
-    \item \textbf{Polarization:} $\psi = 2.659$ rad
-    \item \textbf{Merger time:} $t_c = 1238303719.0$ (GPS time)
-    \item \textbf{Spins:} All spin components set to zero ($a_1 = a_2 = 0$)
-\end{itemize}
+The synthetic gravitational wave signal was generated with the parameters listed in Table~\ref{tab:injected_params}.
+
+\begin{table}[ht]
+\centering
+\caption{Injected parameters of the synthetic binary black hole signal.}
+\label{tab:injected_params}
+\begin{tabular}{|l|c|r|}
+\hline
+\textbf{Parameter} & \textbf{Symbol} & \textbf{Injected value} \\
+\hline
+Chirp mass & $\mathcal{M}$ & $21.75\,M_\odot$ \\
+Mass ratio & $q$ & $1.0$ \\
+Luminosity distance & $d_L$ & $400.0$ Mpc \\
+Inclination & $\theta_{JN}$ & $0.4$ rad \\
+Phase & $\phi$ & $0.0$ rad \\
+Right ascension & RA & $1.375$ rad \\
+Declination & Dec & $-1.2108$ rad \\
+Polarization angle & $\psi$ & $2.659$ rad \\
+Merger time (GPS) & $t_c$ & $1238303719.0$ s \\
+Spin components & $a_1,\,a_2$ & $0$ \\
+\hline
+\end{tabular}
+\end{table}
 
 \subsubsection{Recovery Parameters and Prior Distributions}
-Six parameters were varied during the estimation process, while nine parameters were fixed to their true values:
+Six parameters were varied during the estimation process, while nine parameters were fixed to their true values; the full recovery configuration is given in Table~\ref{tab:recovery_priors}. The fixed parameters were held at their true values to reduce computational complexity while focusing on the core parameters most affected by noise curve stability.
 
-\textbf{Free parameters with priors:}
-\begin{enumerate}
-    \item \textbf{Chirp mass:} Uniform(20.0, 23.0) $M_\odot$
-    \item \textbf{Mass ratio:} Uniform(0.8, 1.0)
-    \item \textbf{Luminosity distance:} Uniform(300, 500) Mpc
-    \item \textbf{Inclination ($\theta_{JN}$):} Sine prior over [0, $\pi$]
-    \item \textbf{Phase:} Uniform(0, $2\pi$)
-    \item \textbf{Geocentric time:} Uniform($t_c - 0.1$, $t_c + 0.1$) seconds
-\end{enumerate}
-
-\textbf{Fixed parameters:} Sky location (RA, Dec), polarization angle ($\psi$), and all spin components were held fixed at their true values to reduce computational complexity while focusing on the core parameters most affected by noise curve stability.
+\begin{table}[ht]
+\centering
+\caption{Recovery configuration: the six sampled parameters with their prior distributions, and the parameters held fixed at their injected values.}
+\label{tab:recovery_priors}
+\begin{tabular}{|l|c|l|}
+\hline
+\textbf{Parameter} & \textbf{Symbol} & \textbf{Prior} \\
+\hline
+\multicolumn{3}{|l|}{\textit{Free parameters (sampled)}} \\
+\hline
+Chirp mass & $\mathcal{M}$ & Uniform$(20.0,\,23.0)\,M_\odot$ \\
+Mass ratio & $q$ & Uniform$(0.8,\,1.0)$ \\
+Luminosity distance & $d_L$ & Uniform$(300,\,500)$ Mpc \\
+Inclination & $\theta_{JN}$ & Sine prior over $[0,\,\pi]$ \\
+Phase & $\phi$ & Uniform$(0,\,2\pi)$ \\
+Geocentric time & $t_c$ & Uniform$(t_c - 0.1,\,t_c + 0.1)$ s \\
+\hline
+\multicolumn{3}{|l|}{\textit{Fixed parameters (held at injected values)}} \\
+\hline
+Sky location & RA, Dec & Fixed \\
+Polarization angle & $\psi$ & Fixed \\
+Spin components & $a_1,\,a_2$ & Fixed \\
+\hline
+\end{tabular}
+\end{table}
 
 \subsubsection{Phase 2 Informed Priors}
 For the Phase 2 refinement step, informed priors were constructed from Phase 1 posterior distributions as TruncatedGaussian distributions centred on the Phase 1 posterior mean with a width of $3\sigma_{\mathrm{scout}}$, clipped to the original prior boundaries. This description supersedes the pilot-study approach (5th--95th percentile expansion by a factor of 1.5) used in early exploratory runs; the systematic results throughout this thesis use the $3\sigma_{\mathrm{scout}}$ construction described in Section~\ref{sec:implementation}.
@@ -1421,7 +1444,7 @@ For the Phase 2 refinement step, informed priors were constructed from Phase 1 p
 \subsection{Matched-Budget Control PP-Plot}
 \label{appendix:pp_controls}
 
-The matched-budget Compression-only control runs of Section~\ref{sec:control} were also processed through the PP-plot pipeline as a sanity check. With $N=3$ iterations per distance, the empirical CDF resolves only $1/N \approx 0.33$ along the rank axis and the Kolmogorov--Smirnov bands inflate to half-widths $\varepsilon_{1\sigma} \approx 0.60$, $\varepsilon_{2\sigma} \approx 0.79$, $\varepsilon_{3\sigma} \approx 1.0$. No quantitative calibration statement can be drawn at this sample size; the panels (Figure~\ref{fig:matched_budget_pp}) confirm only that no curve falls catastrophically outside the bands, and are reported for completeness alongside the headline campaign result of Section~\ref{sec:population_validation}.
+The matched-budget Compression-only control runs of Section~\ref{sec:control} were also processed through the PP-plot pipeline as a sanity check. With $N=3$ iterations per distance, the empirical CDF resolves only $1/N \approx 0.33$ along the rank axis and the Kolmogorov--Smirnov bands inflate to half-widths $\varepsilon_{1\sigma} \approx 0.60$, $\varepsilon_{2\sigma} \approx 0.79$, $\varepsilon_{3\sigma} \approx 1.0$. No quantitative calibration statement can be drawn at this sample size; the panels (Figure~\ref{fig:matched_budget_pp}) confirm only that no curve falls grossly outside the bands, and are reported for completeness alongside the headline campaign result of Section~\ref{sec:population_validation}.
 
 \begin{figure}[htbp]
     \centering
@@ -1466,6 +1489,13 @@ The matched-budget Compression-only control runs of Section~\ref{sec:control} we
   ``GWTC-3: Compact Binary Coalescences Observed by LIGO and Virgo During the Second Part of the Third Observing Run'',
   Physical Review X, vol. 13, no. 4, 041039, 2023,
   arXiv:2111.03606.
+
+\bibitem{ObservingScenarios}
+  B. P. Abbott et al. (KAGRA, LIGO Scientific, and Virgo Collaborations),
+  ``Prospects for Observing and Localizing Gravitational-Wave Transients with
+  Advanced LIGO, Advanced Virgo and KAGRA'',
+  Living Reviews in Relativity, vol. 23, no. 1, article 3, 2020,
+  DOI:10.1007/s41114-020-00026-9, arXiv:1304.0670.
 
 \bibitem{Martynov2016}
   D. V. Martynov, E. D. Hall, B. P. Abbott, R. Abbott, T. D. Abbott, et al.,
